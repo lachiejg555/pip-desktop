@@ -1,0 +1,13 @@
+name = "driftwood-cove"
+main = "relay-worker.js"
+compatibility_date = "2025-06-01"
+
+# Durable Object: the single "cove" room that all players connect to.
+[[durable_objects.bindings]]
+name = "COVE"
+class_name = "Cove"
+
+# SQLite-backed Durable Objects are available on the Workers FREE plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Cove"]

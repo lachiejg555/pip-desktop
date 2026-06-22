@@ -1,0 +1,73 @@
+name: Build Pip installers
+
+# Runs on every push to main, or manually from the Actions tab.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to publish the Release with the installers
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: pip-windows
+          - os: macos-latest
+            artifact: pip-mac
+          - os: ubuntu-latest
+            artifact: pip-linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out the project
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the installer
+        run: npm run build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # unsigned builds in CI
+
+      - name: Upload the installer (Actions artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+          if-no-files-found: ignore
+
+  # Collect all three and publish them to a public "latest" Release, so anyone can
+  # download with one click (no GitHub login required).
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all built installers
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish to the "latest" Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Pip — latest build
+          body: |
+            One-click installers for Pip (the desktop pet + Driftwood Cove).
+            Windows = the .exe, Mac = the .dmg, Linux = the .AppImage.
+            These are unsigned, so the OS shows an "unknown developer" warning — that's expected.
+          files: artifacts/**/*
+          fail_on_unmatched_files: false

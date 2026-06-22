@@ -1,0 +1,40 @@
+{
+  "name": "p3ts-desktop",
+  "version": "0.4.0",
+  "description": "P3TS — pixel pet on real Claude/OpenClaw guts, with the Driftwood Cove multiplayer game",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "relay": "node server/relay.js",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.p3ts.desktop",
+    "productName": "P3TS",
+    "files": [
+      "src/**/*",
+      "server/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.entertainment"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    }
+  }
+}
