@@ -1368,8 +1368,22 @@ setTimeout(firstHello, 1400);
       if(typeof saved.nextId==='number') nextId=saved.nextId;
       activeId = convs.some(c=>c.id===saved.activeId) ? saved.activeId : convs[0].id;
     } }catch(_){ } })();
-  function saveChats(){ try{ localStorage.setItem('p3ts.convs', JSON.stringify({convs:convs,activeId:activeId,nextId:(typeof nextId!=='undefined'?nextId:1)})); }catch(_){ } }
+  function saveChats(){ try{ localStorage.setItem('p3ts.convs', JSON.stringify({convs:convs.filter(c=>!(c&&String(c.id)[0]==='h')),activeId:activeId,nextId:(typeof nextId!=='undefined'?nextId:1)})); }catch(_){ } }
   window.__saveChats=saveChats;
+  // ---- pull in THIS user's own Claude Code chat history as conversation threads ----
+  let __histLoaded=false;
+  async function loadClaudeHistory(){
+    if(__histLoaded) return; __histLoaded=true;
+    if(!window.pip||!window.pip.claudeHistory) return;
+    let sessions; try{ sessions=await window.pip.claudeHistory(); }catch(_){ return; }
+    if(!Array.isArray(sessions)||!sessions.length) return;
+    let added=false;
+    sessions.forEach(s=>{ if(!s||!s.msgs||!s.msgs.length) return; if(convs.find(c=>String(c.id)===String(s.id))) return;
+      convs.push({ id:s.id, title:s.title||'Claude chat', sub:'from your Claude history', pinned:false, msgs:s.msgs }); added=true; });
+    if(added){ const live=convs.find(c=>c.live); convs.sort((a,b)=> (a.live?-2:0)-(b.live?-2:0)); if($('chat').classList.contains('open')) renderConvs(); }
+  }
+  window.__loadClaudeHistory=loadClaudeHistory;
+  setTimeout(loadClaudeHistory, 1400);
   function pushLive(text){ const lc=convs.find(c=>c.live); if(!lc) return;
     lc.msgs.push({who:'bot',t:text}); lc.sub=text.length>34?text.slice(0,33)+'…':text;
     if(typeof activeId!=='undefined'&&activeId===lc.id) renderActive();

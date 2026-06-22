@@ -117,6 +117,54 @@ ipcMain.on('set-ignore', (_e, ignore) => {
 /* quit from the pet's right-click menu */
 ipcMain.on('quit', () => app.quit());
 
+/* Read THIS user's own local Claude Code chat history (~/.claude/projects/*.jsonl),
+   so the pet can show their past conversations. Stays on their machine. */
+ipcMain.handle('claude-history', async () => {
+  const fs = require('fs'); const os = require('os');
+  const root = path.join(os.homedir(), '.claude', 'projects');
+  const files = [];
+  try {
+    for (const dir of fs.readdirSync(root)) {
+      const dp = path.join(root, dir);
+      let st; try { st = fs.statSync(dp); } catch (e) { continue; }
+      if (!st.isDirectory()) continue;
+      for (const f of fs.readdirSync(dp)) {
+        if (f.endsWith('.jsonl')) { const fp = path.join(dp, f); try { files.push({ fp, mtime: fs.statSync(fp).mtimeMs }); } catch (e) {} }
+      }
+    }
+  } catch (e) { return []; }
+  files.sort((a, b) => b.mtime - a.mtime);
+  const out = [];
+  for (const { fp, mtime } of files.slice(0, 14)) {
+    let buf; try { buf = fs.readFileSync(fp); } catch (e) { continue; }
+    if (buf.length > 3000000) buf = buf.slice(buf.length - 3000000); // cap huge sessions
+    const lines = buf.toString('utf8').split('\n');
+    const msgs = [];
+    for (const line of lines) {
+      if (!line) continue;
+      let j; try { j = JSON.parse(line); } catch (e) { continue; }
+      if (j.isSidechain) continue;
+      if (j.type !== 'user' && j.type !== 'assistant') continue;
+      const m = j.message || j; const c = m && m.content;
+      let txt = '';
+      if (typeof c === 'string') txt = c;
+      else if (Array.isArray(c)) txt = c.filter(b => b && b.type === 'text' && b.text).map(b => b.text).join('\n');
+      txt = (txt || '').trim();
+      if (!txt || txt[0] === '<' || txt.startsWith('Caveat:')) continue; // skip tool/meta noise
+      msgs.push({ who: j.type === 'user' ? 'me' : 'bot', t: txt.slice(0, 4000) });
+    }
+    if (!msgs.length) continue;
+    const trimmed = msgs.slice(-50);
+    // skip the pet's own claude -p calls (their first message is the system prompt)
+    if (trimmed[0] && trimmed[0].who === 'me' && /^You are .{0,70}(companion|desktop[ -]?pet|pixel)/.test(trimmed[0].t)) continue;
+    const fu = trimmed.find(x => x.who === 'me');
+    const title = ((fu ? fu.t : trimmed[0].t) || 'Claude chat').replace(/\s+/g, ' ').slice(0, 28);
+    out.push({ id: 'h' + Math.round(mtime), title, msgs: trimmed });
+    if (out.length >= 8) break;
+  }
+  return out;
+});
+
 /* right-click context menu on the pet — quit fully */
 ipcMain.on('pet-menu', () => {
   const menu = Menu.buildFromTemplate([

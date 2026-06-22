@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('pip', {
   drag: (dx, dy) => ipcRenderer.send('drag', { dx, dy }),
   petMenu: () => ipcRenderer.send('pet-menu'),
   quit: () => ipcRenderer.send('quit'),
+  claudeHistory: () => ipcRenderer.invoke('claude-history'),
   onOpenSettings: (cb) => ipcRenderer.on('open-settings', cb),
   setIgnore: (ignore) => ipcRenderer.send('set-ignore', ignore),
   claude: (opts) => ipcRenderer.invoke('claude', opts)
