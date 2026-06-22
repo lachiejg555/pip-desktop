@@ -394,6 +394,9 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
     font-family:var(--bodyfont);cursor:pointer;transition:border-color .12s}
   .set-menu:hover{border-color:var(--accent2)}
   .set-menu .chev{margin-left:auto;color:var(--accent2)}
+  .set-menu .soon{margin-left:auto;font-size:11px;color:var(--onB);background:var(--accent2);opacity:.85;
+    padding:2px 8px;border-radius:10px;letter-spacing:.04em;text-transform:uppercase}
+  .set-menu[data-soon]{opacity:.72}
   .set-sec{display:none;flex-direction:column;gap:8px}
   .set-sec.on{display:flex}
   #setMenu{display:flex;flex-direction:column;gap:8px}
@@ -1440,6 +1443,8 @@ setTimeout(firstHello, 1400);
     +  '<button class="set-menu" data-sec="watch">👁 Watcher mode<span class="chev">›</span></button>'
     +  '<button class="set-menu" data-sec="connect">🤝 Connect mode<span class="chev">›</span></button>'
     +  '<button class="set-menu" data-sec="trade">🪙 Trade mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-soon="Private data mode">🔒 Private data mode<span class="soon">soon</span></button>'
+    +  '<button class="set-menu" data-soon="Compute farm mode">🧮 Compute farm mode<span class="soon">soon</span></button>'
     +'</div>'
     +'<div class="set-sec" id="sec-name"><label>Pet name</label><input id="sName" maxlength="20" placeholder="Pip"/>'
     +  '<button class="set-btn primary" data-save>Save</button></div>'
@@ -1510,7 +1515,7 @@ setTimeout(firstHello, 1400);
     $('sFriendUrl').value=FRIENDURL; $('sFriendKey').value=FRIENDKEY;
     showMenu(); $('settings').classList.add('show'); setIgnore(false); }
   function closeSettings(){ $('settings').classList.remove('show'); }
-  document.querySelectorAll('.set-menu').forEach(b=>b.onclick=()=>showSec(b.dataset.sec));
+  document.querySelectorAll('.set-menu').forEach(b=>b.onclick=()=>{ if(b.dataset.soon){ showBubble('', b.dataset.soon+' — coming soon ✨', 2800); return; } showSec(b.dataset.sec); });
   $('setBack').onclick=showMenu;
   $('sX').onclick=closeSettings;
   $('settings').addEventListener('click',e=>{ if(e.target.id==='settings') closeSettings(); });
@@ -1991,6 +1996,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
 
     // camera follows pet, clamped
     const vw=world.clientWidth, vh=world.clientHeight;
+    { const lo=Math.max(vw/NW, vh/NH); if(zoom<lo) zoom=lo; }
     const halfW=vw/2/zoom, halfH=vh/2/zoom;
     camx += (gx-camx)*Math.min(1,dt*7);
     camy += (gy-camy)*Math.min(1,dt*7);
