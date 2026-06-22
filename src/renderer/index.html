@@ -379,6 +379,25 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   .msg.typing span:nth-child(2){animation-delay:.16s}
   .msg.typing span:nth-child(3){animation-delay:.32s}
   @keyframes tdot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-4px)}}
+  .msgs .msg{font-size:calc(17px * var(--chatscale,1))}
+  #introbox{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:208;display:none;
+    width:330px;max-width:86vw;background:rgba(20,16,28,.92);border:1px solid var(--line);border-radius:16px;
+    padding:16px 16px 30px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  #introbox.show{display:block}
+  #introbox .itext{font-size:18px;color:var(--txt);line-height:1.35;letter-spacing:.3px;min-height:46px;text-align:center}
+  #introbox .iskip{position:absolute;right:12px;bottom:7px;font-size:13px;color:var(--accent2);
+    background:transparent;border:none;cursor:pointer;font-family:var(--bodyfont)}
+  /* settings menu rows */
+  .set-menu{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:var(--panel2);
+    border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:11px 13px;font-size:16px;
+    font-family:var(--bodyfont);cursor:pointer;transition:border-color .12s}
+  .set-menu:hover{border-color:var(--accent2)}
+  .set-menu .chev{margin-left:auto;color:var(--accent2)}
+  .set-sec{display:none;flex-direction:column;gap:8px}
+  .set-sec.on{display:flex}
+  #setMenu{display:flex;flex-direction:column;gap:8px}
+  #setMenu.hide{display:none}
 </style>
 <style id="p3ts-game">
 /* ===================== SCENE GAME (docked in Pip window) ===================== */
@@ -565,6 +584,12 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   .wcard{width:min(94%,360px);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);
     border-radius:16px;padding:14px;font-family:var(--bodyfont);box-shadow:0 24px 64px rgba(0,0,0,.6)}
   .whd{display:flex;align-items:center;font-size:19px;color:var(--accent2);gap:8px}
+  .whd .wbal{margin-left:8px;font-size:15px;color:var(--txt);background:rgba(255,255,255,.06);padding:2px 9px;border-radius:12px}
+  .wnote2{font-size:13px;color:var(--mut);line-height:1.35;margin:2px 0 4px}
+  .wsell{width:100%;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:5px;
+    font-family:var(--bodyfont);font-size:13px;cursor:pointer;margin-top:4px}
+  .wsell:hover:not(:disabled){border-color:var(--accent2)}
+  .wsell:disabled{opacity:.4;cursor:default}
   .wx{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--accent2);border-radius:7px;
     width:26px;height:26px;cursor:pointer;font-family:var(--bodyfont)}
   .wwallet{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
@@ -1300,20 +1325,18 @@ setTimeout(firstHello, 1400);
   let PETNAME=localStorage.getItem('p3ts.name')||'Pip';
   let INTERVAL=+(localStorage.getItem('p3ts.interval')||15000);
   let EXCLUDE=(localStorage.getItem('p3ts.exclude')||'bank\n1password\nkeychain\npassword').split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);
-  let PROVIDER=localStorage.getItem('p3ts.provider')||'claudecli';         // 'claudecli' | 'claude' | 'openclaw'
-  let OCURL=localStorage.getItem('p3ts.ocurl')||'http://localhost:18789';  // OpenClaw gateway base URL
-  let OCKEY=localStorage.getItem('p3ts.ockey')||'';                        // optional OpenClaw token
+  let FRIENDURL=localStorage.getItem('p3ts.friendurl')||'';   // connect mode: a friend's Claude (gateway URL)
+  let FRIENDKEY=localStorage.getItem('p3ts.friendkey')||'';
   const SYS=()=>"You are "+PETNAME+", a warm and genuinely helpful pixel desktop-pet companion. Chat casually and keep replies short and friendly, no markdown. Be actually useful: answer questions and help however you can, and use web search for anything live (weather, news, facts, prices). You can also watch the user's screen when they switch it on. Stay in character as their little buddy.";
   const hasNative=!!(window.pip&&window.pip.claude);
   const isPreview=!!(window.pip&&window.pip.__preview);
-  // resolve the active connection into {provider,key,baseUrl,model}
-  function conn(){
-    if(PROVIDER==='claudecli') return {provider:'claudecli', key:'', baseUrl:'', model:''};
-    if(PROVIDER==='openclaw')  return {provider:'openclaw', key:OCKEY||'', baseUrl:OCURL, model:'openclaw/default'};
-    return {provider:'claude', key:API_KEY, baseUrl:'https://api.anthropic.com', model:MODEL};
-  }
-  function connected(){ if(PROVIDER==='claudecli') return true; return PROVIDER==='openclaw' ? !!OCURL : !!API_KEY; }
-  function visionOK(){ return PROVIDER!=='claudecli'; }   // CLI path is text-only
+  // CHAT uses your own Claude Code by default, or a friend's Claude (connect mode).
+  function chatConn(){ if(FRIENDURL) return {provider:'openclaw', key:FRIENDKEY||'', baseUrl:FRIENDURL, model:'openclaw/default'};
+    return {provider:'claudecli', key:'', baseUrl:'', model:''}; }
+  // WATCH (screen vision) uses an Anthropic API key — that's "watcher mode".
+  function watchConn(){ return {provider:'claude', key:API_KEY, baseUrl:'https://api.anthropic.com', model:MODEL}; }
+  function visionOK(){ return !!API_KEY; }    // screen-watch needs an API key
+  function connected(){ return true; }        // chat always available via Claude Code
 
   /* ---------- desktop name sync ---------- */
   function syncName(){ document.querySelectorAll('.pane .top .nm').forEach(n=>n.textContent=PETNAME);
@@ -1321,7 +1344,18 @@ setTimeout(firstHello, 1400);
 
   /* ---------- live chat: real screen commentary ---------- */
   (function seedLive(){ const lc=convs.find(c=>c.live); if(!lc) return;
-    lc.sub='ready to chat'; lc.msgs=[{who:'bot',t:"hey! i'm "+PETNAME+". just chat with me — i use your own Claude Code login, no setup needed. the 👁 up top turns on screen-watching (that one needs an Anthropic API key). everything stays on this machine."}]; })();
+    lc.sub='ready to chat'; lc.msgs=[{who:'bot',t:"hey! i'm "+PETNAME+". just chat with me — i use your own Claude Code login, no setup. ask me anything (i can web-search too). models, screen-watching & trading live in the ⚙ menu."}]; })();
+  // ---- remember chat history across sessions ----
+  (function restoreChats(){ try{ const saved=JSON.parse(localStorage.getItem('p3ts.convs')||'null');
+    if(saved && Array.isArray(saved.convs) && saved.convs.length){
+      const live=convs.find(c=>c.live);
+      convs.length=0; saved.convs.forEach(c=>convs.push(c));
+      if(!convs.find(c=>c.live) && live) convs.unshift(live);
+      if(typeof saved.nextId==='number') nextId=saved.nextId;
+      activeId = convs.some(c=>c.id===saved.activeId) ? saved.activeId : convs[0].id;
+    } }catch(_){ } })();
+  function saveChats(){ try{ localStorage.setItem('p3ts.convs', JSON.stringify({convs:convs,activeId:activeId,nextId:(typeof nextId!=='undefined'?nextId:1)})); }catch(_){ } }
+  window.__saveChats=saveChats;
   function pushLive(text){ const lc=convs.find(c=>c.live); if(!lc) return;
     lc.msgs.push({who:'bot',t:text}); lc.sub=text.length>34?text.slice(0,33)+'…':text;
     if(typeof activeId!=='undefined'&&activeId===lc.id) renderActive();
@@ -1337,9 +1371,9 @@ setTimeout(firstHello, 1400);
     let msgs=c.msgs.filter(m=>m.who==='me'||m.who==='bot').map(m=>({role:m.who==='me'?'user':'assistant',content:m.t}));
     while(msgs.length&&msgs[0].role!=='user') msgs.shift();
     msgs=collapse(msgs);
-    const cn=conn();
+    const cn=chatConn();
     try{ return await window.pip.claude({provider:cn.provider,key:cn.key,baseUrl:cn.baseUrl,model:cn.model,max_tokens:300,system:SYS(),messages:msgs}); }
-    catch(e){ return "(couldn't reach "+(PROVIDER==='openclaw'?'openclaw':'claude')+" — "+e.message+")"; }
+    catch(e){ return "(couldn't reach "+(FRIENDURL?"your friend's claude":"claude code")+" — "+e.message+")"; }
   }
   window.send=async function(){
     const i=$('inp'); const v=i.value.trim(); if(!v) return;
@@ -1349,13 +1383,14 @@ setTimeout(firstHello, 1400);
     let r; try{ r=await askClaude(c); }catch(e){ r="(error: "+e.message+")"; }
     if(typing&&typing.remove) typing.remove();
     c.msgs.push({who:'bot',t:r}); if(activeId===c.id) addMsgEl('bot',r); c.sub=r.slice(0,28); renderConvs();
+    if(window.__saveChats) window.__saveChats();
   };
 
   /* ---------- intro → "let's get started" → minimal Claude Code connect → chat ---------- */
   window.advanceIntro=function(){
     introIdx++;
-    if(introIdx>=INTRO_LINES.length){ hideBubble(); mode='wander'; pickTarget(); lastBubble=performance.now();
-      setTimeout(openConnect, 400); return; }
+    if(introIdx>=INTRO_LINES.length){ hideBubble(); const ib=document.getElementById('introbox'); if(ib) ib.classList.remove('show');
+      mode='wander'; pickTarget(); lastBubble=performance.now(); setTimeout(openConnect, 400); return; }
     introBubble(INTRO_LINES[introIdx]);
   };
 
@@ -1383,7 +1418,7 @@ setTimeout(firstHello, 1400);
       cap.width=Math.round(w*sc); cap.height=Math.round(h*sc);
       cap.getContext('2d').drawImage(vid,0,0,cap.width,cap.height);
       const b64=cap.toDataURL('image/jpeg',0.6).split(',')[1];
-      const cn=conn();
+      const cn=watchConn();
       const txt=await window.pip.claude({provider:cn.provider,key:cn.key,baseUrl:cn.baseUrl,model:cn.model,max_tokens:120,system:SYS(),
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
@@ -1398,36 +1433,40 @@ setTimeout(firstHello, 1400);
   const SETTINGS=''
     +'<div id="settings"><div class="set-card">'
     +'<button class="set-x" id="sX">✕</button>'
-    +'<h3>⚙ <span id="sTitle">Pip</span> — settings</h3>'
-    +'<label>Pet name</label><input id="sName" maxlength="20" placeholder="Pip"/>'
-    +'<label>Connect with</label><select id="sProvider">'
-    +'<option value="claudecli">Claude Code — your subscription (no API key)</option>'
-    +'<option value="claude">Claude — Anthropic API key</option>'
-    +'<option value="openclaw">OpenClaw — local gateway</option></select>'
-    +'<div id="rowCLI" style="display:none"><div class="set-hint">Uses your own <b>Claude Code</b> login — no API key, no API bill. One-time setup: install Claude Code, then run <code>claude</code> once to sign in. <b>Chat only</b> — the 👁 screen-watching feature needs an Anthropic API key (switch to “Claude — API key” above).</div></div>'
-    +'<div id="rowClaude"><label>Anthropic API key</label><input id="sKey" type="password" placeholder="sk-ant-…" autocomplete="off"/></div>'
-    +'<div id="rowOC" style="display:none"><label>OpenClaw endpoint</label>'
-    +'<input id="sOcurl" placeholder="http://localhost:18789" autocomplete="off"/>'
-    +'<label>OpenClaw token (optional)</label><input id="sOckey" type="password" placeholder="optional" autocomplete="off"/></div>'
-    +'<label>Model</label><select id="sModel">'
-    +'<option value="claude-haiku-4-5-20251001">Haiku — fast</option>'
-    +'<option value="claude-sonnet-4-6">Sonnet — balanced</option>'
-    +'<option value="claude-opus-4-8">Opus — best</option></select>'
-    +'<label>Comment every</label><select id="sInt">'
-    +'<option value="10000">10 seconds</option><option value="15000">15 seconds</option>'
-    +'<option value="30000">30 seconds</option><option value="60000">1 minute</option></select>'
-    +'<div class="set-row"><button class="set-btn" id="sWatch">👁 Watch my screen</button>'
-    +'<button class="set-btn" id="sPause" title="Pause" style="flex:0 0 46px">⏸</button></div>'
-    +'<label>Privacy — never watch these</label>'
-    +'<textarea id="sExcl" placeholder="one per line: bank, 1password, keychain…"></textarea>'
-    +'<div class="set-hint">When the screen shows anything sensitive (banking, passwords) or matching these, '+'Pip looks away and sends nothing. Your key &amp; data stay on this machine.</div>'
-    +'<label>Wallet — buy cosmetics with crypto</label>'
-    +'<input id="sWcpid" placeholder="WalletConnect Project ID" autocomplete="off"/>'
-    +'<input id="sEthRecv" placeholder="Your ETH receiving address (0x…)" autocomplete="off" style="margin-top:6px"/>'
-    +'<input id="sSolRecv" placeholder="Your SOL receiving address" autocomplete="off" style="margin-top:6px"/>'
-    +'<div class="set-hint">Players connect Phantom/MetaMask via WalletConnect and pay <b>these addresses</b> for cosmetics. Get a free Project ID at cloud.reown.com.</div>'
-    +'<div class="set-row"><button class="set-btn" id="sNotify">🔔 Test</button>'
-    +'<button class="set-btn primary" id="sSave">Save</button></div>'
+    +'<h3 id="setHd">⚙ Settings</h3>'
+    +'<div id="setMenu">'
+    +  '<button class="set-menu" data-sec="name">🐾 Pet name<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="model">🧠 Model<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="watch">👁 Watcher mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="connect">🤝 Connect mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="trade">🪙 Trade mode<span class="chev">›</span></button>'
+    +'</div>'
+    +'<div class="set-sec" id="sec-name"><label>Pet name</label><input id="sName" maxlength="20" placeholder="Pip"/>'
+    +  '<button class="set-btn primary" data-save>Save</button></div>'
+    +'<div class="set-sec" id="sec-model"><label>Model</label><select id="sModel">'
+    +  '<option value="claude-opus-4-8">Opus 4.8 — most capable</option>'
+    +  '<option value="claude-sonnet-4-6">Sonnet 4.6 — balanced</option>'
+    +  '<option value="claude-haiku-4-5-20251001">Haiku 4.5 — fastest</option>'
+    +  '<option value="claude-fable-5">Fable 5</option></select>'
+    +  '<div class="set-hint">Used for watcher &amp; connect modes. Your Claude Code chat uses its own default model.</div>'
+    +  '<button class="set-btn primary" data-save>Save</button></div>'
+    +'<div class="set-sec" id="sec-watch">'
+    +  '<div class="set-hint">Let Pip <b>watch your screen</b> and comment. Needs an Anthropic API key (separate from your Claude Code chat).</div>'
+    +  '<label>Anthropic API key</label><input id="sKey" type="password" placeholder="sk-ant-…" autocomplete="off"/>'
+    +  '<label>Comment every</label><select id="sInt"><option value="10000">10 seconds</option><option value="15000">15 seconds</option><option value="30000">30 seconds</option><option value="60000">1 minute</option></select>'
+    +  '<label>Privacy — never watch these</label><textarea id="sExcl" placeholder="one per line: bank, 1password…"></textarea>'
+    +  '<div class="set-row"><button class="set-btn" id="sWatch">👁 Watch my screen</button><button class="set-btn" id="sPause" title="Pause" style="flex:0 0 46px">⏸</button></div>'
+    +  '<button class="set-btn primary" data-save>Save</button></div>'
+    +'<div class="set-sec" id="sec-connect">'
+    +  '<div class="set-hint">Chat with a <b>friend’s Claude</b> instead of your own. Paste the URL they share. Leave blank to use your own Claude Code.</div>'
+    +  '<label>Friend’s Claude URL</label><input id="sFriendUrl" placeholder="https://their-gateway…" autocomplete="off"/>'
+    +  '<label>Access token (optional)</label><input id="sFriendKey" type="password" placeholder="if they set one" autocomplete="off"/>'
+    +  '<button class="set-btn primary" data-save>Save</button></div>'
+    +'<div class="set-sec" id="sec-trade">'
+    +  '<div class="set-hint">Connect a wallet to trade cosmetics. <b>Cross-chain trading arrives in the next update.</b> For now, buy &amp; sell cosmetics with 🦴 <b>bones</b> in the shop.</div>'
+    +  '<div class="set-row"><button class="set-btn" id="sPhantom">🟣 Phantom</button><button class="set-btn" id="sMetamask">🦊 MetaMask</button></div>'
+    +  '<button class="set-btn primary" id="sOpenShop">🛒 Open shop</button></div>'
+    +'<button class="set-btn" id="setBack" style="display:none;margin-top:6px">← Back</button>'
     +'</div></div>';
   document.body.insertAdjacentHTML('beforeend',SETTINGS);
   // minimal start-of-app connect step — Claude Code only
@@ -1445,71 +1484,70 @@ setTimeout(firstHello, 1400);
   $('ccGo').onclick=connectGo;
   $('connectc').addEventListener('click',e=>{ if(e.target.id==='connectc') connectGo(); });
 
-  // ---- intro: let people read it (tap Pip) OR skip straight to the start ----
+  // ---- intro dialogue box: centered text, Pip sits at its bottom-right, with a Skip ----
   document.body.insertAdjacentHTML('beforeend',
-    '<div id="introskip"><button class="set-btn" id="introSkipBtn">Skip intro ⏭</button></div>');
+    '<div id="introbox"><div class="itext"></div><button class="iskip" id="iskipBtn">Skip ⏭</button></div>');
   function skipIntro(){ if(typeof INTRO_LINES==='undefined') return; introIdx=INTRO_LINES.length-1; window.advanceIntro(); }
-  $('introSkipBtn').onclick=skipIntro;
-  setInterval(()=>{ const s=$('introskip'); if(s) s.style.display=(typeof mode!=='undefined'&&mode==='intro')?'block':'none'; }, 250);
-  function updateWatchUI(){
-    const w=$('sWatch');
-    if(w){
-      if(!visionOK()){ w.textContent='👁 Watch — needs API key'; w.classList.remove('on'); }
-      else { w.textContent=watching?(paused?'⏸ Paused — click to watch':'👁 Watching — click to stop'):'👁 Watch my screen'; w.classList.toggle('on',watching&&!paused); }
-    }
-    const ew=$('openWatch'); if(ew){ ew.style.color = watching?(paused?'#ffd23f':'var(--green)'):'';
-      ew.title = visionOK() ? (watching?'Screen watching — click to stop':'Screen watching') : 'Screen watching (needs an Anthropic API key)'; }
-  }
-  function applyProviderUI(){ const p=$('sProvider').value;
-    $('rowCLI').style.display=p==='claudecli'?'':'none';
-    $('rowClaude').style.display=p==='claude'?'':'none';
-    $('rowOC').style.display=p==='openclaw'?'':'none'; }
-  function openSettings(){ $('sName').value=PETNAME; $('sKey').value=API_KEY; $('sModel').value=MODEL;
-    $('sProvider').value=PROVIDER; $('sOcurl').value=OCURL; $('sOckey').value=OCKEY; applyProviderUI();
-    $('sInt').value=String(INTERVAL); $('sExcl').value=localStorage.getItem('p3ts.exclude')||'bank\n1password\nkeychain\npassword';
-    $('sWcpid').value=localStorage.getItem('p3ts.wcpid')||''; $('sEthRecv').value=localStorage.getItem('p3ts.ethrecv')||''; $('sSolRecv').value=localStorage.getItem('p3ts.solrecv')||'';
-    $('sTitle').textContent=PETNAME; updateWatchUI(); $('settings').classList.add('show'); setIgnore(false); }
+  $('iskipBtn').onclick=skipIntro;
+  // override the speech bubble during intro: show the box + place Pip at its bottom-right
+  window.introBubble=function(text){
+    const box=$('introbox'); if(!box) return;
+    box.querySelector('.itext').textContent=text; box.classList.add('show');
+    if(typeof hideBubble==='function') hideBubble();
+    const r=box.getBoundingClientRect();
+    px=r.right-22; py=r.bottom + (typeof FW!=='undefined'?FW*0.18:14); tx=px; ty=py;
+  };
+  function updateWatchUI(){ const w=$('sWatch'); if(!w) return;
+    if(!visionOK()){ w.textContent='👁 add an API key above to watch'; w.classList.remove('on'); }
+    else { w.textContent=watching?(paused?'⏸ Paused — click to watch':'👁 Watching — click to stop'):'👁 Watch my screen'; w.classList.toggle('on',watching&&!paused); } }
+  const SEC_TITLES={name:'🐾 Pet name',model:'🧠 Model',watch:'👁 Watcher mode',connect:'🤝 Connect mode',trade:'🪙 Trade mode'};
+  function showMenu(){ $('setMenu').classList.remove('hide'); document.querySelectorAll('.set-sec').forEach(s=>s.classList.remove('on')); $('setBack').style.display='none'; $('setHd').textContent='⚙ Settings'; }
+  function showSec(sec){ $('setMenu').classList.add('hide'); document.querySelectorAll('.set-sec').forEach(s=>s.classList.remove('on'));
+    const el=$('sec-'+sec); if(el) el.classList.add('on'); $('setBack').style.display=''; $('setHd').textContent=SEC_TITLES[sec]||'⚙ Settings'; updateWatchUI(); }
+  function openSettings(){
+    $('sName').value=PETNAME; $('sModel').value=MODEL; $('sKey').value=API_KEY; $('sInt').value=String(INTERVAL);
+    $('sExcl').value=localStorage.getItem('p3ts.exclude')||'bank\n1password\nkeychain\npassword';
+    $('sFriendUrl').value=FRIENDURL; $('sFriendKey').value=FRIENDKEY;
+    showMenu(); $('settings').classList.add('show'); setIgnore(false); }
   function closeSettings(){ $('settings').classList.remove('show'); }
-  $('sProvider').onchange=applyProviderUI;
+  document.querySelectorAll('.set-menu').forEach(b=>b.onclick=()=>showSec(b.dataset.sec));
+  $('setBack').onclick=showMenu;
   $('sX').onclick=closeSettings;
   $('settings').addEventListener('click',e=>{ if(e.target.id==='settings') closeSettings(); });
-  $('sSave').onclick=()=>{ PETNAME=$('sName').value.trim()||'Pip'; localStorage.setItem('p3ts.name',PETNAME);
-    API_KEY=$('sKey').value.trim(); localStorage.setItem('p3ts.key',API_KEY);
-    PROVIDER=$('sProvider').value; localStorage.setItem('p3ts.provider',PROVIDER);
-    OCURL=$('sOcurl').value.trim()||'http://localhost:18789'; localStorage.setItem('p3ts.ocurl',OCURL);
-    OCKEY=$('sOckey').value.trim(); localStorage.setItem('p3ts.ockey',OCKEY);
+  function saveAll(){
+    PETNAME=$('sName').value.trim()||'Pip'; localStorage.setItem('p3ts.name',PETNAME);
     MODEL=$('sModel').value; localStorage.setItem('p3ts.model',MODEL);
+    API_KEY=$('sKey').value.trim(); localStorage.setItem('p3ts.key',API_KEY);
     INTERVAL=+$('sInt').value; localStorage.setItem('p3ts.interval',INTERVAL);
-    const raw=$('sExcl').value; localStorage.setItem('p3ts.exclude',raw);
-    EXCLUDE=raw.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);
-    localStorage.setItem('p3ts.wcpid', $('sWcpid').value.trim());
-    localStorage.setItem('p3ts.ethrecv', $('sEthRecv').value.trim());
-    localStorage.setItem('p3ts.solrecv', $('sSolRecv').value.trim());
+    const raw=$('sExcl').value; localStorage.setItem('p3ts.exclude',raw); EXCLUDE=raw.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);
+    FRIENDURL=$('sFriendUrl').value.trim(); localStorage.setItem('p3ts.friendurl',FRIENDURL);
+    FRIENDKEY=$('sFriendKey').value.trim(); localStorage.setItem('p3ts.friendkey',FRIENDKEY);
     if(stream&&loop){ clearInterval(loop); loop=setInterval(commentTick,INTERVAL); }
-    syncName(); $('sTitle').textContent=PETNAME;
-    showBubble('', 'saved 🐾', 1800);
-    closeSettings();
-  };
+    syncName(); showBubble('', 'saved 🐾', 1500); showMenu();
+  }
+  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=saveAll);
   $('sWatch').onclick=()=> watching?stopWatch():startWatch();
   $('sPause').onclick=()=>{ if(!stream) return; paused=!paused; updateWatchUI();
     showBubble('', paused?'looking away 🙈':'watching again 👀', 1800); };
-  $('sNotify').onclick=()=>{ if(hasNative&&window.pip.notify) window.pip.notify(PETNAME, PETNAME+' says hi 🐾');
+  function tradeSoon(w){ showBubble('', w+' — cross-chain trading lands next update. for now, trade with 🦴 bones in the shop!', 4200); }
+  $('sPhantom').onclick=()=>tradeSoon('🟣 Phantom');
+  $('sMetamask').onclick=()=>tradeSoon('🦊 MetaMask');
+  $('sOpenShop').onclick=()=>{ closeSettings(); if(window.__openShop) window.__openShop(); };
+  function __unusedNotify(){ if(hasNative&&window.pip.notify) window.pip.notify(PETNAME, PETNAME+' says hi 🐾');
     else showBubble('', 'notifications need the desktop app', 2000); };
 
-  /* ---------- header buttons next to the ✕: 👁 screen-watch (opt-in) + ⚙ settings ---------- */
-  function toggleWatchFromHeader(){
-    if(!visionOK()){ showBubble('', 'screen-watching needs an Anthropic API key — pick “Claude — API key” in settings 🐾', 3600); openSettings(); return; }
-    if(!connected()){ openSettings(); return; }
-    watching ? stopWatch() : startWatch();
-  }
+  /* ---------- header buttons: A− / A+ text size + ⚙ settings (no eye — watcher lives in settings) ---------- */
+  let textScale=parseFloat(localStorage.getItem('p3ts.textscale')||'1')||1;
+  function applyTextScale(){ document.documentElement.style.setProperty('--chatscale', textScale); }
+  applyTextScale();
   (function addHeaderBtns(){ const top=document.querySelector('.pane .top'); if(!top) return;
     const x=top.querySelector('.wc-x');
-    const eye=document.createElement('button'); eye.className='wc-x'; eye.id='openWatch';
-    eye.title='Screen watching (needs API key)'; eye.textContent='👁'; eye.style.fontSize='14px'; eye.style.marginLeft='auto';
-    eye.onclick=toggleWatchFromHeader;
-    const g=document.createElement('button'); g.className='wc-x'; g.id='openSet'; g.title='Settings';
-    g.textContent='⚙'; g.style.fontSize='15px'; g.style.marginLeft='6px'; g.onclick=openSettings;
-    if(x){ x.style.marginLeft='6px'; top.insertBefore(eye,x); top.insertBefore(g,x); } else { top.appendChild(eye); top.appendChild(g); }
+    function mk(txt,title,fn,first){ const b=document.createElement('button'); b.className='wc-x'; b.textContent=txt; b.title=title;
+      b.style.width='auto'; b.style.padding='0 6px'; b.style.fontSize='13px'; b.style.marginLeft=first?'auto':'4px'; b.onclick=fn; return b; }
+    const minus=mk('A−','Smaller text',()=>{ textScale=Math.max(.75,Math.round((textScale-.1)*10)/10); localStorage.setItem('p3ts.textscale',textScale); applyTextScale(); }, true);
+    const plus =mk('A+','Bigger text',()=>{ textScale=Math.min(1.7,Math.round((textScale+.1)*10)/10); localStorage.setItem('p3ts.textscale',textScale); applyTextScale(); });
+    const g=mk('⚙','Settings',openSettings); g.style.fontSize='15px';
+    if(x){ x.style.marginLeft='4px'; top.insertBefore(minus,x); top.insertBefore(plus,x); top.insertBefore(g,x); } else top.append(minus,plus,g);
   })();
   window.openSettings=openSettings;   // let other handlers reach it
 
@@ -1521,6 +1559,10 @@ setTimeout(firstHello, 1400);
     ['pet','egg'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('contextmenu',e=>{ e.preventDefault(); window.pip.petMenu&&window.pip.petMenu(); }); });
     window.pip.onOpenSettings&&window.pip.onOpenSettings(()=>openSettings());
   }
+
+  // ---- animate the pet preview in the cosmetics (bag) view ----
+  let bagFrame=0;
+  setInterval(()=>{ const pb=document.getElementById('petbig'); if(pb){ bagFrame=(bagFrame+1)%6; pb.style.backgroundPositionX=(-bagFrame*162)+'px'; } }, 170);
 
   /* ---------- click-through: window is mouse-transparent except over the pet/chat/settings ---------- */
   function setIgnore(v){ if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(v); }
@@ -2044,7 +2086,8 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
         if(typeof renderCat==='function') renderCat(); }
     } else {
       const f=FOODS[Math.floor(Math.random()*FOODS.length)]; f.n++;
-      popText('+1 '+f.name, gx, gy-PETF*0.5);
+      try{ localStorage.setItem('p3ts.bones',(parseInt(localStorage.getItem('p3ts.bones')||'25',10)+1)); }catch(_){}
+      popText('+1 '+f.name+' 🦴', gx, gy-PETF*0.5);
       if(typeof renderCat==='function') renderCat();
     }
     scheduleForage();
@@ -2107,94 +2150,54 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
 })();
 </script>
 <script>
-/* ===================== WALLET + CRYPTO COSMETIC SHOP (model a) ===================== */
+/* ===================== SHOP — trade cosmetics for 🦴 bones (wallets next update) ===================== */
 (function(){
-  const wallet={ client:null, modal:null, session:null, chain:null, address:null };
-  const ETH_PRICE=0.001, SOL_PRICE=0.02;     // per cosmetic (demo defaults)
-  const SOL_CHAIN='solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';   // solana mainnet
   const $=id=>document.getElementById(id);
-  const ls=k=>(localStorage.getItem(k)||'').trim();
+  const PRICE=5, SELL=3;
+  function bones(){ return parseInt(localStorage.getItem('p3ts.bones')||'25',10)||0; }
+  function setBones(n){ localStorage.setItem('p3ts.bones', Math.max(0,n)); const b=$('wbones'); if(b) b.textContent=bones(); }
+  // fixed catalog snapshot (everything COSDATA shipped with); COSDATA itself = what you own
+  const CATALOG=(function(){ const out=[],seen={}; const C=(typeof COSDATA!=='undefined')?COSDATA:{};
+    ['hat','face','neck','aura'].forEach(cat=>{ (C[cat]||[]).forEach(it=>{ const k=cat+'/'+it.name; if(!seen[k]){seen[k]=1; out.push({cat,ic:it.ic,name:it.name});} }); }); return out; })();
+  function owns(item){ const C=(typeof COSDATA!=='undefined')?COSDATA:{}; return (C[item.cat]||[]).some(x=>x.name===item.name); }
 
   document.body.insertAdjacentHTML('beforeend',
     '<div id="wshop"><div class="wcard">'
-    +'<div class="whd">💎 Cosmetics Shop <button class="wx" id="wclose">✕</button></div>'
-    +'<div class="wwallet" id="wwallet"></div>'
+    +'<div class="whd">🛒 Shop <span class="wbal">🦴 <span id="wbones">0</span></span> <button class="wx" id="wclose">✕</button></div>'
+    +'<div class="wwallet"><button class="wconn" id="wphantom">🟣 Phantom</button><button class="wconn" id="wmeta">🦊 MetaMask</button></div>'
+    +'<div class="wnote2">Cross-chain trading arrives in the next update. For now, buy &amp; sell cosmetics with 🦴 bones — forage in the cove to earn more.</div>'
     +'<div class="wgrid" id="wgrid"></div>'
     +'<div class="wnote" id="wnote"></div></div></div>');
   function note(t){ const n=$('wnote'); if(n) n.textContent=t||''; }
-  function openShop(){ renderWallet(); $('wshop').classList.add('show'); if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(false); }
+  function openShop(){ setBones(bones()); buildShop(); note(''); $('wshop').classList.add('show'); if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(false); }
   function closeShop(){ $('wshop').classList.remove('show'); }
   $('wclose').onclick=closeShop;
   $('wshop').addEventListener('click',e=>{ if(e.target.id==='wshop') closeShop(); });
+  $('wphantom').onclick=()=>note('🟣 Phantom — cross-chain trading lands next update. trade with 🦴 bones for now!');
+  $('wmeta').onclick=()=>note('🦊 MetaMask — cross-chain trading lands next update. trade with 🦴 bones for now!');
 
-  function catalog(){ const out=[],seen={}; const C=(typeof COSDATA!=='undefined')?COSDATA:{};
-    ['hat','face','neck','aura'].forEach(cat=>{ (C[cat]||[]).forEach(it=>{ if(!seen[it.name]){ seen[it.name]=1; out.push({cat,ic:it.ic,name:it.name}); } }); });
-    return out; }
   function buildShop(){ const g=$('wgrid'); if(!g) return; g.innerHTML='';
-    const price = wallet.chain==='sol' ? ('◎ '+SOL_PRICE) : ('Ξ '+ETH_PRICE);
-    catalog().forEach(item=>{ const d=document.createElement('div'); d.className='witem';
-      d.innerHTML='<img src="data:image/png;base64,'+item.ic+'"/><div class="wn">'+item.name+'</div><button class="wbuy">'+price+'</button>';
-      d.querySelector('.wbuy').onclick=()=>buy(item); g.appendChild(d); }); }
-  function renderWallet(){ const w=$('wwallet'); if(!w) return;
-    if(wallet.session && wallet.address){ const a=wallet.address, short=a.slice(0,6)+'…'+a.slice(-4);
-      w.innerHTML='<span class="wpill">🟢 '+(wallet.chain==='sol'?'Phantom':'MetaMask')+': '+short+'</span><button class="wdis" id="wdisc">Disconnect</button>';
-      $('wdisc').onclick=disconnect;
-    } else {
-      w.innerHTML='<button class="wconn" data-c="evm">Connect MetaMask</button><button class="wconn" data-c="sol">Connect Phantom</button>';
-      w.querySelectorAll('.wconn').forEach(b=>b.onclick=()=>connect(b.dataset.c));
-    }
-    buildShop(); }
+    CATALOG.forEach(item=>{ const d=document.createElement('div'); d.className='witem';
+      const have=owns(item);
+      d.innerHTML='<img src="data:image/png;base64,'+item.ic+'"/><div class="wn">'+item.name+'</div>'
+        +'<button class="wbuy">🦴 '+PRICE+'</button>'
+        +'<button class="wsell"'+(have?'':' disabled')+'>sell 🦴 '+SELL+'</button>';
+      d.querySelector('.wbuy').onclick=()=>buy(item);
+      d.querySelector('.wsell').onclick=()=>sell(item);
+      g.appendChild(d); });
+  }
+  function buy(item){ if(bones()<PRICE){ note('not enough bones — forage in the cove to earn more 🦴'); return; }
+    setBones(bones()-PRICE);
+    const C=(typeof COSDATA!=='undefined')?COSDATA:null; if(C&&C[item.cat]) C[item.cat].push({ic:item.ic,name:item.name});
+    if(typeof renderCat==='function') renderCat(); buildShop(); note('✅ bought '+item.name+'!'); }
+  function sell(item){ const C=(typeof COSDATA!=='undefined')?COSDATA:null; if(!C) return;
+    const arr=C[item.cat]||[]; const i=arr.findIndex(x=>x.name===item.name); if(i<0){ note('you don’t own a '+item.name+' to sell'); return; }
+    arr.splice(i,1); setBones(bones()+SELL);
+    if(typeof renderCat==='function') renderCat(); buildShop(); note('sold '+item.name+' for 🦴 '+SELL); }
 
-  async function wcInit(){
-    if(wallet.client) return wallet.client;
-    const pid=ls('p3ts.wcpid'); if(!pid) throw new Error('Add a WalletConnect Project ID in settings.');
-    note('loading wallet library…');
-    const [sc,md]=await Promise.all([ import('https://esm.sh/@walletconnect/sign-client@2.17.2'), import('https://esm.sh/@walletconnect/modal@2.7.0') ]);
-    wallet.client=await sc.SignClient.init({ projectId:pid, metadata:{ name:'P3TS Pet', description:'Driftwood Cove cosmetics', url:'https://driftwood-cove.lachiejg5.workers.dev', icons:[] } });
-    wallet.modal=new md.WalletConnectModal({ projectId:pid }); note(''); return wallet.client;
-  }
-  async function connect(chain){
-    try{ const client=await wcInit();
-      const ns = chain==='sol'
-        ? { solana:{ methods:['solana_signAndSendTransaction'], chains:[SOL_CHAIN], events:[] } }
-        : { eip155:{ methods:['eth_sendTransaction'], chains:['eip155:1'], events:['accountsChanged','chainChanged'] } };
-      const { uri, approval }=await client.connect({ requiredNamespaces:ns });
-      if(uri) wallet.modal.openModal({ uri });
-      note('approve in your wallet app…');
-      const session=await approval(); try{ wallet.modal.closeModal(); }catch(_){}
-      wallet.session=session; wallet.chain=chain;
-      const acct = chain==='sol' ? session.namespaces.solana.accounts[0] : session.namespaces.eip155.accounts[0];
-      wallet.address=acct.split(':').pop(); note(''); renderWallet();
-    }catch(e){ try{ wallet.modal&&wallet.modal.closeModal(); }catch(_){ } note('✕ '+((e&&e.message)||'connect failed')); }
-  }
-  function disconnect(){ try{ if(wallet.client&&wallet.session) wallet.client.disconnect({ topic:wallet.session.topic, reason:{code:6000,message:'user'} }); }catch(_){}
-    wallet.session=null; wallet.address=null; wallet.chain=null; renderWallet(); }
-  async function payEVM(to,eth){ const wei=BigInt(Math.round(eth*1e18));
-    return wallet.client.request({ topic:wallet.session.topic, chainId:'eip155:1',
-      request:{ method:'eth_sendTransaction', params:[{ from:wallet.address, to:to, value:'0x'+wei.toString(16) }] } }); }
-  async function paySOL(to,sol){ const web3=await import('https://esm.sh/@solana/web3.js@1.95.3');
-    const conn=new web3.Connection('https://api.mainnet-beta.solana.com','confirmed');
-    const fromPk=new web3.PublicKey(wallet.address), toPk=new web3.PublicKey(to);
-    const { blockhash }=await conn.getLatestBlockhash();
-    const tx=new web3.Transaction({ recentBlockhash:blockhash, feePayer:fromPk })
-      .add(web3.SystemProgram.transfer({ fromPubkey:fromPk, toPubkey:toPk, lamports:Math.round(sol*1e9) }));
-    const ser=tx.serialize({ requireAllSignatures:false });
-    const b64=(typeof Buffer!=='undefined')?Buffer.from(ser).toString('base64'):btoa(String.fromCharCode.apply(null,ser));
-    return wallet.client.request({ topic:wallet.session.topic, chainId:SOL_CHAIN, request:{ method:'solana_signAndSendTransaction', params:{ transaction:b64 } } }); }
-  async function buy(item){
-    if(!wallet.session){ note('connect a wallet first'); return; }
-    const sol=wallet.chain==='sol'; const to= sol?ls('p3ts.solrecv'):ls('p3ts.ethrecv');
-    if(!to){ note('no receiving '+(sol?'SOL':'ETH')+' address set (settings)'); return; }
-    try{ note('confirm the payment in your wallet…');
-      if(sol) await paySOL(to,SOL_PRICE); else await payEVM(to,ETH_PRICE);
-      const C=(typeof COSDATA!=='undefined')?COSDATA:null; if(C&&C[item.cat]) C[item.cat].push({ic:item.ic,name:item.name});
-      if(typeof renderCat==='function') renderCat();
-      note('✅ purchased '+item.name+'!');
-    }catch(e){ note('✕ '+((e&&e.message)||'payment cancelled')); }
-  }
-  // 💎 button in the cove HUD
+  // 🛒 button in the cove HUD
   (function(){ const z=document.getElementById('gzoom'); if(z&&!document.getElementById('wopen')){
-    const b=document.createElement('button'); b.id='wopen'; b.className='gzbtn'; b.textContent='💎'; b.title='Cosmetics shop'; b.onclick=openShop; z.prepend(b); } })();
+    const b=document.createElement('button'); b.id='wopen'; b.className='gzbtn'; b.textContent='🛒'; b.title='Shop'; b.onclick=openShop; z.prepend(b); } })();
   window.__openShop=openShop;
 })();
 </script>
