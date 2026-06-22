@@ -38,9 +38,12 @@ function runClaudeCli({ system, messages }) {
       const bin = cands[i];
       if ((bin.includes('/') || bin.includes('\\')) && !fs.existsSync(bin)) return tryAt(i + 1);
       let child;
-      // allow web search so Pip can answer live things (weather, news, facts)
-      try { child = spawn(bin, ['-p', '--output-format', 'text', '--allowed-tools', 'WebSearch'], { shell: win }); }
-      catch (e) { return tryAt(i + 1); }
+      // POWER MODE: full agent — Pip can run commands, read/write files, build things,
+      // and use the web, all without permission prompts. Runs from the user's home folder.
+      try {
+        child = spawn(bin, ['-p', '--output-format', 'text', '--dangerously-skip-permissions'],
+          { shell: win, cwd: require('os').homedir() });
+      } catch (e) { return tryAt(i + 1); }
       let out = '', err = '', done = false;
       child.stdout.on('data', d => out += d);
       child.stderr.on('data', d => err += d);
