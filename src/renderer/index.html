@@ -361,12 +361,12 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   .set-card textarea{resize:vertical;min-height:44px}
   .set-row{display:flex;gap:8px}.set-row>*{flex:1}
   .set-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;
-    padding:9px;font-family:var(--bodyfont);font-size:15px;cursor:pointer}
+    padding:10px;font-family:var(--bodyfont);font-size:17px;letter-spacing:.3px;cursor:pointer}
   .set-btn.primary{background:var(--accent2);color:var(--onB);border:none}
   .set-btn.on{background:var(--green);color:#06210a;border:none}
   .set-x{position:absolute;right:12px;top:10px;background:transparent;border:none;color:var(--mut);
     font-size:18px;cursor:pointer;line-height:1}
-  .set-hint{font-size:13px;color:var(--mut);line-height:1.3}
+  .set-hint{font-size:15px;color:var(--mut);line-height:1.35;letter-spacing:.2px}
   #connectc{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,14,.55);z-index:210;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
   #connectc.show{display:flex}
@@ -670,7 +670,7 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
           <div id="gmarket">
             <div class="gmwin">
               <div class="gmhd"><span id="gmtitle">Marketplace</span>
-                <span class="gcoins">🪙 <span id="gcoinval">0</span></span>
+                <span class="gcoins"><span id="gcoinval">0</span></span>
                 <button class="gmx" id="gmclose" title="Close">✕</button></div>
               <div class="gmtabs">
                 <button class="gmtab on" id="gmtab-buy">Buy</button>
@@ -928,7 +928,7 @@ function loop(now){
   }
   else if(mode==='docked'){ setAnim(ROW.IDLE,5); }
   else if(mode==='sleeping'){ setAnim(ROW.SLEEP,5);
-    if(now-lastBubble>6000){ showBubble('','💤 zzz… tap me to feed',5000); lastBubble=now; }
+    if(now-lastBubble>6000){ showBubble('','zzz… tap me to feed',5000); lastBubble=now; }
   }
 
   pet.style.left=(px-FW/2)+'px';
@@ -969,7 +969,7 @@ pet.addEventListener('click',()=>{
   }
   if(mode==='docked'){ openChat(); return; }
   // dock target: just above clock / bottom-right
-  tx = W()-150; ty = Hh()-150;
+  tx = W()-58; ty = Hh()-66;
   mode='summon';
   const b=document.getElementById('bubble'); b.classList.remove('show'); clearTimeout(b._h);
 });
@@ -1154,7 +1154,7 @@ function send(){
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
 function reply(v){
   v=v.toLowerCase();
-  if(v.includes('feed')||v.includes('food')||v.includes('hungry')) return "Check the 🦴 tab — there's foraged fruit in the larder. Bamboo fills me up most.";
+  if(v.includes('feed')||v.includes('food')||v.includes('hungry')) return "Check the tab — there's foraged fruit in the larder. Bamboo fills me up most.";
   if(v.includes('hi')||v.includes('hey')||v.includes('hello')) return "Hey! Everything I learn stays on this machine. What do you need?";
   return "Got it — noted. I only act on what you tell me here, never on what's inside your inbox or pages.";
 }
@@ -1273,12 +1273,12 @@ function feed(i){
   f.n--; hunger=Math.min(100,hunger+f.val);
   if(mode==='sleeping'){ mode='wander'; pickTarget(); }
   renderCat(); syncHunger();
-  if(!chat.classList.contains('open')) showBubble('','😋 nom nom',1600);
+  if(!chat.classList.contains('open')) showBubble('','nom nom',1600);
 }
 let foraging=false;
 function forage(){
   if(foraging) return; foraging=true;
-  const btn=document.getElementById('forage'); btn.disabled=true; btn.textContent='🔎 Searching…';
+  const btn=document.getElementById('forage'); btn.disabled=true; btn.textContent='Searching…';
   setTimeout(()=>{
     const f=FOODS[Math.floor(Math.random()*FOODS.length)]; f.n++;
     foraging=false; renderCat();
@@ -1312,7 +1312,7 @@ renderCat(); syncHunger();
 /* first hello — only after the egg has hatched, so it doesn't cover "hatch me!" */
 function firstHello(){
   if(mode==='egg'||mode==='hatching'||mode==='flop'||mode==='intro'){ setTimeout(firstHello,1500); return; }
-  showBubble('',"hey! click me whenever you want to chat 🐾",4200);
+  showBubble('',"hey! click me whenever you want to chat ",4200);
 }
 setTimeout(firstHello, 1400);
 </script>
@@ -1369,8 +1369,8 @@ setTimeout(firstHello, 1400);
     e.className='msg bot typing'; e.innerHTML='<span></span><span></span><span></span>'; m.appendChild(e); m.scrollTop=m.scrollHeight; return e; }
   function collapse(a){ const o=[]; for(const m of a){ if(o.length&&o[o.length-1].role===m.role) o[o.length-1].content+='\n'+m.content; else o.push({role:m.role,content:m.content}); } return o; }
   async function askClaude(c){
-    if(!hasNative) return "(browser preview — i can't reach an AI here. open me in the desktop app and i'll reply for real 🐾)";
-    if(!connected() && !isPreview) return "open settings (the ⚙ in the chat, or right-click me) and connect to claude or openclaw first 🐾";
+    if(!hasNative) return "(browser preview — i can't reach an AI here. open me in the desktop app and i'll reply for real )";
+    if(!connected() && !isPreview) return "open settings (the ⚙ in the chat, or right-click me) and connect to claude or openclaw first ";
     let msgs=c.msgs.filter(m=>m.who==='me'||m.who==='bot').map(m=>({role:m.who==='me'?'user':'assistant',content:m.t}));
     while(msgs.length&&msgs[0].role!=='user') msgs.shift();
     msgs=collapse(msgs);
@@ -1400,9 +1400,9 @@ setTimeout(firstHello, 1400);
   /* ---------- screen watching (real capture + Claude vision) ---------- */
   let stream=null,loop=null,busy=false,paused=false,watching=false;
   async function startWatch(){
-    if(!hasNative){ pushLive("screen watching needs the desktop app 🐾"); return; }
-    if(!visionOK()){ openSettings(); pushLive("screen-watch needs the API or OpenClaw provider — your Claude Code subscription does chat only 🐾"); return; }
-    if(!connected()){ openSettings(); pushLive("connect to claude or openclaw first, then i can watch 👀"); return; }
+    if(!hasNative){ pushLive("screen watching needs the desktop app "); return; }
+    if(!visionOK()){ openSettings(); pushLive("screen-watch needs the API or OpenClaw provider — your Claude Code subscription does chat only "); return; }
+    if(!connected()){ openSettings(); pushLive("connect to claude or openclaw first, then i can watch "); return; }
     let id; try{ const src=await window.pip.listSources(); if(!src.length){ pushLive("no screen found to watch."); return; } id=src[0].id; }
     catch(e){ pushLive("capture unavailable: "+e.message); return; }
     try{ stream=await navigator.mediaDevices.getUserMedia({audio:false,
@@ -1410,7 +1410,7 @@ setTimeout(firstHello, 1400);
     catch(e){ pushLive("couldn't start capture: "+e.message); return; }
     const vid=$('vid'); vid.srcObject=stream; await vid.play();
     paused=false; watching=true; updateWatchUI();
-    pushLive("watching your screen now 👀 everything stays on this machine.");
+    pushLive("watching your screen now everything stays on this machine.");
     commentTick(); loop=setInterval(commentTick,INTERVAL);
   }
   function stopWatch(){ if(loop)clearInterval(loop); if(stream)stream.getTracks().forEach(t=>t.stop());
@@ -1438,13 +1438,13 @@ setTimeout(firstHello, 1400);
     +'<button class="set-x" id="sX">✕</button>'
     +'<h3 id="setHd">⚙ Settings</h3>'
     +'<div id="setMenu">'
-    +  '<button class="set-menu" data-sec="name">🐾 Pet name<span class="chev">›</span></button>'
-    +  '<button class="set-menu" data-sec="model">🧠 Model<span class="chev">›</span></button>'
-    +  '<button class="set-menu" data-sec="watch">👁 Watcher mode<span class="chev">›</span></button>'
-    +  '<button class="set-menu" data-sec="connect">🤝 Connect mode<span class="chev">›</span></button>'
-    +  '<button class="set-menu" data-sec="trade">🪙 Trade mode<span class="chev">›</span></button>'
-    +  '<button class="set-menu" data-soon="Private data mode">🔒 Private data mode<span class="soon">soon</span></button>'
-    +  '<button class="set-menu" data-soon="Compute farm mode">🧮 Compute farm mode<span class="soon">soon</span></button>'
+    +  '<button class="set-menu" data-sec="name">Pet name<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="model">Model<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="watch">Watcher mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="connect">Connect mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-sec="trade">Trade mode<span class="chev">›</span></button>'
+    +  '<button class="set-menu" data-soon="Private data mode">Private data mode<span class="soon">soon</span></button>'
+    +  '<button class="set-menu" data-soon="Compute farm mode">Compute farm mode<span class="soon">soon</span></button>'
     +'</div>'
     +'<div class="set-sec" id="sec-name"><label>Pet name</label><input id="sName" maxlength="20" placeholder="Pip"/>'
     +  '<button class="set-btn primary" data-save>Save</button></div>'
@@ -1460,7 +1460,7 @@ setTimeout(firstHello, 1400);
     +  '<label>Anthropic API key</label><input id="sKey" type="password" placeholder="sk-ant-…" autocomplete="off"/>'
     +  '<label>Comment every</label><select id="sInt"><option value="10000">10 seconds</option><option value="15000">15 seconds</option><option value="30000">30 seconds</option><option value="60000">1 minute</option></select>'
     +  '<label>Privacy — never watch these</label><textarea id="sExcl" placeholder="one per line: bank, 1password…"></textarea>'
-    +  '<div class="set-row"><button class="set-btn" id="sWatch">👁 Watch my screen</button><button class="set-btn" id="sPause" title="Pause" style="flex:0 0 46px">⏸</button></div>'
+    +  '<div class="set-row"><button class="set-btn" id="sWatch">Watch my screen</button><button class="set-btn" id="sPause" title="Pause" style="flex:0 0 60px">pause</button></div>'
     +  '<button class="set-btn primary" data-save>Save</button></div>'
     +'<div class="set-sec" id="sec-connect">'
     +  '<div class="set-hint">Chat with a <b>friend’s Claude</b> instead of your own. Paste the URL they share. Leave blank to use your own Claude Code.</div>'
@@ -1468,16 +1468,16 @@ setTimeout(firstHello, 1400);
     +  '<label>Access token (optional)</label><input id="sFriendKey" type="password" placeholder="if they set one" autocomplete="off"/>'
     +  '<button class="set-btn primary" data-save>Save</button></div>'
     +'<div class="set-sec" id="sec-trade">'
-    +  '<div class="set-hint">Connect a wallet to trade cosmetics. <b>Cross-chain trading arrives in the next update.</b> For now, buy &amp; sell cosmetics with 🦴 <b>bones</b> in the shop.</div>'
-    +  '<div class="set-row"><button class="set-btn" id="sPhantom">🟣 Phantom</button><button class="set-btn" id="sMetamask">🦊 MetaMask</button></div>'
-    +  '<button class="set-btn primary" id="sOpenShop">🛒 Open shop</button></div>'
+    +  '<div class="set-hint">Connect a wallet to trade cosmetics. <b>Cross-chain trading arrives in the next update.</b> For now, buy &amp; sell cosmetics with <b>bones</b> in the shop.</div>'
+    +  '<div class="set-row"><button class="set-btn" id="sPhantom">Phantom</button><button class="set-btn" id="sMetamask">MetaMask</button></div>'
+    +  '<button class="set-btn primary" id="sOpenShop">Open shop</button></div>'
     +'<button class="set-btn" id="setBack" style="display:none;margin-top:6px">← Back</button>'
     +'</div></div>';
   document.body.insertAdjacentHTML('beforeend',SETTINGS);
   // minimal start-of-app connect step — Claude Code only
   document.body.insertAdjacentHTML('beforeend',
     '<div id="connectc"><div class="set-card" style="text-align:center;width:300px">'
-    +'<h3 style="justify-content:center">🐾 Meet <span id="ccName">Pip</span></h3>'
+    +'<h3 style="justify-content:center">Meet <span id="ccName">Pip</span></h3>'
     +'<div class="set-hint">I chat using <b>your own Claude Code</b> login — no API key, no setup.</div>'
     +'<div class="set-hint" style="margin-top:8px">First time? Install Claude Code on this computer and run <code>claude</code> once to sign in.</div>'
     +'<button class="set-btn primary" id="ccGo" style="margin-top:12px">Start chatting →</button>'
@@ -1491,7 +1491,7 @@ setTimeout(firstHello, 1400);
 
   // ---- intro dialogue box: centered text, Pip sits at its bottom-right, with a Skip ----
   document.body.insertAdjacentHTML('beforeend',
-    '<div id="introbox"><div class="itext"></div><button class="iskip" id="iskipBtn">Skip ⏭</button></div>');
+    '<div id="introbox"><div class="itext"></div><button class="iskip" id="iskipBtn">Skip </button></div>');
   function skipIntro(){ if(typeof INTRO_LINES==='undefined') return; introIdx=INTRO_LINES.length-1; window.advanceIntro(); }
   $('iskipBtn').onclick=skipIntro;
   // override the speech bubble during intro: show the box + place Pip at its bottom-right
@@ -1503,9 +1503,9 @@ setTimeout(firstHello, 1400);
     px=r.right-22; py=r.bottom + (typeof FW!=='undefined'?FW*0.18:14); tx=px; ty=py;
   };
   function updateWatchUI(){ const w=$('sWatch'); if(!w) return;
-    if(!visionOK()){ w.textContent='👁 add an API key above to watch'; w.classList.remove('on'); }
-    else { w.textContent=watching?(paused?'⏸ Paused — click to watch':'👁 Watching — click to stop'):'👁 Watch my screen'; w.classList.toggle('on',watching&&!paused); } }
-  const SEC_TITLES={name:'🐾 Pet name',model:'🧠 Model',watch:'👁 Watcher mode',connect:'🤝 Connect mode',trade:'🪙 Trade mode'};
+    if(!visionOK()){ w.textContent='add an API key above to watch'; w.classList.remove('on'); }
+    else { w.textContent=watching?(paused?'Paused — click to watch':'Watching — click to stop'):'Watch my screen'; w.classList.toggle('on',watching&&!paused); } }
+  const SEC_TITLES={name:'Pet name',model:'Model',watch:'Watcher mode',connect:'Connect mode',trade:'Trade mode'};
   function showMenu(){ $('setMenu').classList.remove('hide'); document.querySelectorAll('.set-sec').forEach(s=>s.classList.remove('on')); $('setBack').style.display='none'; $('setHd').textContent='⚙ Settings'; }
   function showSec(sec){ $('setMenu').classList.add('hide'); document.querySelectorAll('.set-sec').forEach(s=>s.classList.remove('on'));
     const el=$('sec-'+sec); if(el) el.classList.add('on'); $('setBack').style.display=''; $('setHd').textContent=SEC_TITLES[sec]||'⚙ Settings'; updateWatchUI(); }
@@ -1515,7 +1515,7 @@ setTimeout(firstHello, 1400);
     $('sFriendUrl').value=FRIENDURL; $('sFriendKey').value=FRIENDKEY;
     showMenu(); $('settings').classList.add('show'); setIgnore(false); }
   function closeSettings(){ $('settings').classList.remove('show'); }
-  document.querySelectorAll('.set-menu').forEach(b=>b.onclick=()=>{ if(b.dataset.soon){ showBubble('', b.dataset.soon+' — coming soon ✨', 2800); return; } showSec(b.dataset.sec); });
+  document.querySelectorAll('.set-menu').forEach(b=>b.onclick=()=>{ if(b.dataset.soon){ showBubble('', b.dataset.soon+' — coming soon ', 2800); return; } showSec(b.dataset.sec); });
   $('setBack').onclick=showMenu;
   $('sX').onclick=closeSettings;
   $('settings').addEventListener('click',e=>{ if(e.target.id==='settings') closeSettings(); });
@@ -1528,17 +1528,17 @@ setTimeout(firstHello, 1400);
     FRIENDURL=$('sFriendUrl').value.trim(); localStorage.setItem('p3ts.friendurl',FRIENDURL);
     FRIENDKEY=$('sFriendKey').value.trim(); localStorage.setItem('p3ts.friendkey',FRIENDKEY);
     if(stream&&loop){ clearInterval(loop); loop=setInterval(commentTick,INTERVAL); }
-    syncName(); showBubble('', 'saved 🐾', 1500); showMenu();
+    syncName(); showBubble('', 'saved ', 1500); showMenu();
   }
   document.querySelectorAll('[data-save]').forEach(b=>b.onclick=saveAll);
   $('sWatch').onclick=()=> watching?stopWatch():startWatch();
   $('sPause').onclick=()=>{ if(!stream) return; paused=!paused; updateWatchUI();
-    showBubble('', paused?'looking away 🙈':'watching again 👀', 1800); };
-  function tradeSoon(w){ showBubble('', w+' — cross-chain trading lands next update. for now, trade with 🦴 bones in the shop!', 4200); }
-  $('sPhantom').onclick=()=>tradeSoon('🟣 Phantom');
-  $('sMetamask').onclick=()=>tradeSoon('🦊 MetaMask');
+    showBubble('', paused?'looking away ':'watching again ', 1800); };
+  function tradeSoon(w){ showBubble('', w+' — cross-chain trading lands next update. for now, trade with bones in the shop!', 4200); }
+  $('sPhantom').onclick=()=>tradeSoon('Phantom');
+  $('sMetamask').onclick=()=>tradeSoon('MetaMask');
   $('sOpenShop').onclick=()=>{ closeSettings(); if(window.__openShop) window.__openShop(); };
-  function __unusedNotify(){ if(hasNative&&window.pip.notify) window.pip.notify(PETNAME, PETNAME+' says hi 🐾');
+  function __unusedNotify(){ if(hasNative&&window.pip.notify) window.pip.notify(PETNAME, PETNAME+' says hi ');
     else showBubble('', 'notifications need the desktop app', 2000); };
 
   /* ---------- header buttons: A− / A+ text size + ⚙ settings (no eye — watcher lives in settings) ---------- */
@@ -1572,7 +1572,7 @@ setTimeout(firstHello, 1400);
   /* ---------- click-through: window is mouse-transparent except over the pet/chat/settings ---------- */
   function setIgnore(v){ if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(v); }
   let ignoring=null;
-  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop,#introskip')); }
+  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop,#introbox')); }
   function refresh(x,y){ const want=!over(x,y); if(want!==ignoring){ ignoring=want; setIgnore(want); } }
   window.addEventListener('mousemove',e=>refresh(e.clientX,e.clientY));
   // start mouse-transparent so the real desktop is clickable
@@ -1617,9 +1617,9 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
 
   // ---- collision: only solid OBJECTS (buildings). posts/rocks/water no longer block ----
   const SOLIDS=[
-    {x:470,y:8,  w:165,h:120},   // top-right house
-    {x:150,y:78, w:70, h:60 },   // small structure upper-left
-    {x:486,y:340,w:120,h:96 }    // lower-right cabin
+    {x:484,y:76, w:122,h:38},    // top-right house — ground base only
+    {x:146,y:72, w:58, h:22},    // small upper-left hut — base
+    {x:504,y:386,w:92, h:30}     // lower-right cabin — base
   ];
   function shoreY(x){ const base=502; const dip=28*Math.exp(-Math.pow((x-440)/90,2)); return base-dip; }
   function inSolid(x,y){ for(const s of SOLIDS){ if(x>s.x&&x<s.x+s.w&&y>s.y&&y<s.y+s.h) return true; } return false; }
@@ -1656,8 +1656,9 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
   // a clipped copy of the map is layered over the scene; the sprite's z-index
   // drops below it when the sprite's feet are inside the object footprint.
   const OCCL=[
-    {sx:468,sy:0,  w:172,h:108},  // top-right house upper body
-    {sx:484,sy:330,w:128,h:86 }   // lower-right cabin upper body
+    {sx:466,sy:6,  w:150,h:78},   // top-right house upper body
+    {sx:140,sy:42, w:68, h:36},   // small upper-left hut
+    {sx:498,sy:326,w:104,h:64}    // lower-right cabin upper body
   ];
   function buildOccluders(){
     const layer=document.getElementById('goccluders');
@@ -1712,7 +1713,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
       const d=document.createElement('div'); d.className='gmkt';
       d.style.left=m.x+'px'; d.style.top=m.y+'px';
       d.style.width=m.w+'px'; d.style.height=m.h+'px';
-      d.innerHTML='<span class="gtag">🛒 '+m.name+'</span>';
+      d.innerHTML='<span class="gtag">'+m.name+'</span>';
       d.onclick=()=>openMarket(m.name);
       layer.appendChild(d);
     }
@@ -1771,7 +1772,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
         const row=document.createElement('div'); row.className='gmrow';
         if(mktTab==='buy'){
           row.innerHTML='<img src="data:image/png;base64,'+(f?f.ic:'')+'"/>'+
-            '<span class="gmn">'+s.name+'<small>🪙 '+s.buy+' each</small></span>'+
+            '<span class="gmn">'+s.name+'<small>'+s.buy+' each</small></span>'+
             '<button class="gmbtn"'+(coins<s.buy?' disabled':'')+'>Buy</button>';
           row.querySelector('button').onclick=()=>{
             if(coins<s.buy) return; coins-=s.buy; if(f) f.n++;
@@ -1795,7 +1796,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
           row.querySelector('.gmbtn').onclick=()=>{
             if(f.n<=0) return; const price=clampPrice(sellPrice[s.name]);
             f.n--; coins+=price;
-            logMsg('','📦 Listed 1 '+s.name+' for 🪙 '+price+' — sold!','sys');
+            logMsg('','Listed 1 '+s.name+' for '+price+' — sold!','sys');
             if(typeof renderCat==='function') renderCat(); updateCoins(); renderMarket();
           };
         }
@@ -1842,8 +1843,8 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
     o.tx=nx; o.ty=ny;
   }
   function updateOnline(){ gct.textContent=(others.length+1)+' online'; }
-  const OTHER_LINES=['anyone got spare bamboo?','this beach is so calm today','look at my hat 😎',
-    'caught 3 fish!','the pumpkins are huge rn','brb feeding my panda','gm 🌅','race you to the dock',
+  const OTHER_LINES=['anyone got spare bamboo?','this beach is so calm today','look at my hat ',
+    'caught 3 fish!','the pumpkins are huge rn','brb feeding my panda','gm ','race you to the dock',
     'who keeps taking my berries','lovely evening for a stroll'];
 
   // ---- chat ----
@@ -1867,7 +1868,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
         logMsg(o.name, r); bubbleOther(o, r); }, 900+Math.random()*1400);
     }
   }
-  const REPLIES=['haha nice','oh same','👀','where you at?','agreed','lol','🐼','+1','show me!','gg'];
+  const REPLIES=['haha nice','oh same','','where you at?','agreed','lol','','+1','show me!','gg'];
   document.getElementById('gcsend').onclick=sendChat;
   gcin.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();sendChat();} e.stopPropagation(); });
 
@@ -2060,7 +2061,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
     gx=300; gy=470; gtx=gx; gty=gy; gface=1; zoom=2.4; camx=gx; camy=gy;
     for(const k in keys) keys[k]=false;
     glog.innerHTML='';
-    logMsg('','🌿 Welcome to Driftwood Cove. WASD or right-click to move Pip.','sys');
+    logMsg('','Welcome to Driftwood Cove. WASD or right-click to move Pip.','sys');
     logMsg('','Gather resources by standing still in a spot (every 30s). Tap a stall to trade.','sys');
     buildOccluders(); buildMarkets(); updateCoins(); closeMarket();
     spawnOthers(); scheduleForage(); if(typeof goOnline==='function') setTimeout(goOnline,150);
@@ -2088,12 +2089,12 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
       const cats=['hat','face','neck','aura']; const cat=cats[Math.floor(Math.random()*cats.length)];
       const pool=(typeof COSDATA!=='undefined') ? COSDATA[cat] : null;
       if(pool && pool.length){ const it=pool[Math.floor(Math.random()*pool.length)]; pool.push({ic:it.ic,name:it.name});
-        popText('✨ '+it.name+'!', gx, gy-PETF*0.6); logMsg('','✨ rare forage — a '+it.name+' cosmetic!','sys');
+        popText(''+it.name+'!', gx, gy-PETF*0.6); logMsg('','rare forage — a '+it.name+' cosmetic!','sys');
         if(typeof renderCat==='function') renderCat(); }
     } else {
       const f=FOODS[Math.floor(Math.random()*FOODS.length)]; f.n++;
       try{ localStorage.setItem('p3ts.bones',(parseInt(localStorage.getItem('p3ts.bones')||'25',10)+1)); }catch(_){}
-      popText('+1 '+f.name+' 🦴', gx, gy-PETF*0.5);
+      popText('+1 '+f.name+' ', gx, gy-PETF*0.5);
       if(typeof renderCat==='function') renderCat();
     }
     scheduleForage();
@@ -2136,14 +2137,14 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
   }
   function goOnline(){
     if(net.online){ goOffline(); return; }
-    let ws; try{ ws=new WebSocket(relayURL()); }catch(e){ logMsg('','⚠ bad relay URL — check settings','sys'); return; }
-    net.ws=ws; logMsg('','🌐 connecting to '+relayURL()+' …','sys'); updateGoBtn();
+    let ws; try{ ws=new WebSocket(relayURL()); }catch(e){ logMsg('','bad relay URL — check settings','sys'); return; }
+    net.ws=ws; logMsg('','connecting to '+relayURL()+' …','sys'); updateGoBtn();
     ws.onopen=()=>{ net.online=true; updateGoBtn();
       ws.send(JSON.stringify({t:'join',name:myCoveName(),hue:Math.floor(60+Math.random()*260),x:Math.round(gx),y:Math.round(gy)}));
-      logMsg('','🌐 you are online — real players will appear here','sys'); };
+      logMsg('','you are online — real players will appear here','sys'); };
     ws.onmessage=(ev)=>{ let m; try{ m=JSON.parse(ev.data); }catch(_){ return; } handleNet(m); };
-    ws.onerror=()=>{ logMsg('','⚠ could not reach the relay. Is it running? (npm run relay)','sys'); };
-    ws.onclose=()=>{ if(net.online) logMsg('','🔌 disconnected from the cove','sys'); cleanupNet(); };
+    ws.onerror=()=>{ logMsg('','could not reach the relay. Is it running? (npm run relay)','sys'); };
+    ws.onclose=()=>{ if(net.online) logMsg('','disconnected from the cove','sys'); cleanupNet(); };
   }
   // multiplayer is automatic on entering the cove (no button / not an option)
   function updateGoBtn(){}
@@ -2156,7 +2157,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
 })();
 </script>
 <script>
-/* ===================== SHOP — trade cosmetics for 🦴 bones (wallets next update) ===================== */
+/* ===================== SHOP — trade cosmetics for bones (wallets next update) ===================== */
 (function(){
   const $=id=>document.getElementById(id);
   const PRICE=5, SELL=3;
@@ -2169,9 +2170,9 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
 
   document.body.insertAdjacentHTML('beforeend',
     '<div id="wshop"><div class="wcard">'
-    +'<div class="whd">🛒 Shop <span class="wbal">🦴 <span id="wbones">0</span></span> <button class="wx" id="wclose">✕</button></div>'
-    +'<div class="wwallet"><button class="wconn" id="wphantom">🟣 Phantom</button><button class="wconn" id="wmeta">🦊 MetaMask</button></div>'
-    +'<div class="wnote2">Cross-chain trading arrives in the next update. For now, buy &amp; sell cosmetics with 🦴 bones — forage in the cove to earn more.</div>'
+    +'<div class="whd">Shop <span class="wbal"><span id="wbones">0</span></span> <button class="wx" id="wclose">✕</button></div>'
+    +'<div class="wwallet"><button class="wconn" id="wphantom">Phantom</button><button class="wconn" id="wmeta">MetaMask</button></div>'
+    +'<div class="wnote2">Cross-chain trading arrives in the next update. For now, buy &amp; sell cosmetics with bones — forage in the cove to earn more.</div>'
     +'<div class="wgrid" id="wgrid"></div>'
     +'<div class="wnote" id="wnote"></div></div></div>');
   function note(t){ const n=$('wnote'); if(n) n.textContent=t||''; }
@@ -2179,31 +2180,31 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
   function closeShop(){ $('wshop').classList.remove('show'); }
   $('wclose').onclick=closeShop;
   $('wshop').addEventListener('click',e=>{ if(e.target.id==='wshop') closeShop(); });
-  $('wphantom').onclick=()=>note('🟣 Phantom — cross-chain trading lands next update. trade with 🦴 bones for now!');
-  $('wmeta').onclick=()=>note('🦊 MetaMask — cross-chain trading lands next update. trade with 🦴 bones for now!');
+  $('wphantom').onclick=()=>note('Phantom — cross-chain trading lands next update. trade with bones for now!');
+  $('wmeta').onclick=()=>note('MetaMask — cross-chain trading lands next update. trade with bones for now!');
 
   function buildShop(){ const g=$('wgrid'); if(!g) return; g.innerHTML='';
     CATALOG.forEach(item=>{ const d=document.createElement('div'); d.className='witem';
       const have=owns(item);
       d.innerHTML='<img src="data:image/png;base64,'+item.ic+'"/><div class="wn">'+item.name+'</div>'
-        +'<button class="wbuy">🦴 '+PRICE+'</button>'
-        +'<button class="wsell"'+(have?'':' disabled')+'>sell 🦴 '+SELL+'</button>';
+        +'<button class="wbuy">'+PRICE+'</button>'
+        +'<button class="wsell"'+(have?'':' disabled')+'>sell '+SELL+'</button>';
       d.querySelector('.wbuy').onclick=()=>buy(item);
       d.querySelector('.wsell').onclick=()=>sell(item);
       g.appendChild(d); });
   }
-  function buy(item){ if(bones()<PRICE){ note('not enough bones — forage in the cove to earn more 🦴'); return; }
+  function buy(item){ if(bones()<PRICE){ note('not enough bones — forage in the cove to earn more '); return; }
     setBones(bones()-PRICE);
     const C=(typeof COSDATA!=='undefined')?COSDATA:null; if(C&&C[item.cat]) C[item.cat].push({ic:item.ic,name:item.name});
-    if(typeof renderCat==='function') renderCat(); buildShop(); note('✅ bought '+item.name+'!'); }
+    if(typeof renderCat==='function') renderCat(); buildShop(); note('bought '+item.name+'!'); }
   function sell(item){ const C=(typeof COSDATA!=='undefined')?COSDATA:null; if(!C) return;
     const arr=C[item.cat]||[]; const i=arr.findIndex(x=>x.name===item.name); if(i<0){ note('you don’t own a '+item.name+' to sell'); return; }
     arr.splice(i,1); setBones(bones()+SELL);
-    if(typeof renderCat==='function') renderCat(); buildShop(); note('sold '+item.name+' for 🦴 '+SELL); }
+    if(typeof renderCat==='function') renderCat(); buildShop(); note('sold '+item.name+' for '+SELL); }
 
-  // 🛒 button in the cove HUD
+  // button in the cove HUD
   (function(){ const z=document.getElementById('gzoom'); if(z&&!document.getElementById('wopen')){
-    const b=document.createElement('button'); b.id='wopen'; b.className='gzbtn'; b.textContent='🛒'; b.title='Shop'; b.onclick=openShop; z.prepend(b); } })();
+    const b=document.createElement('button'); b.id='wopen'; b.className='gzbtn'; b.textContent=''; b.title='Shop'; b.onclick=openShop; z.prepend(b); } })();
   window.__openShop=openShop;
 })();
 </script>
