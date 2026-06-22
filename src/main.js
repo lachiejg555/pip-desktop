@@ -138,7 +138,8 @@ ipcMain.handle('claude-history', async () => {
   } catch (e) { return []; }
   files.sort((a, b) => b.mtime - a.mtime);
   const out = [];
-  for (const { fp, mtime } of files.slice(0, 14)) {
+  let petAdded = false; // the pet's -p sessions all hold the same growing transcript; keep just the newest, rebuilt
+  for (const { fp, mtime } of files.slice(0, 20)) {
     let buf; try { buf = fs.readFileSync(fp); } catch (e) { continue; }
     if (buf.length > 3000000) buf = buf.slice(buf.length - 3000000); // cap huge sessions
     const lines = buf.toString('utf8').split('\n');
@@ -157,13 +158,33 @@ ipcMain.handle('claude-history', async () => {
       msgs.push({ who: j.type === 'user' ? 'me' : 'bot', t: txt.slice(0, 4000) });
     }
     if (!msgs.length) continue;
+    const isPet = msgs[0].who === 'me' && /^You are .{0,90}(companion|desktop[ -]?pet|pixel)/.test(msgs[0].t);
+    if (isPet) {
+      // the pet wraps the whole transcript into one prompt; rebuild it into a clean thread
+      if (petAdded) continue;
+      const turns = [];
+      const wrapped = msgs.find(x => x.who === 'me');
+      if (wrapped) {
+        let who = null, acc = [];
+        const flush = () => { if (who) { const t = acc.join('\n').trim(); if (t) turns.push({ who, t: t.slice(0, 4000) }); } who = null; acc = []; };
+        for (const line of wrapped.t.split('\n')) {
+          if (line.startsWith('User: ')) { flush(); who = 'me'; acc = [line.slice(6)]; }
+          else if (line.startsWith('You: ')) { flush(); who = 'bot'; acc = [line.slice(5)]; }
+          else if (line.startsWith('You are ') || line.startsWith('Now respond')) { /* system/instruction */ }
+          else if (who) { acc.push(line); }
+        }
+        flush();
+      }
+      const lastBot = msgs.filter(x => x.who === 'bot').slice(-1)[0];
+      if (lastBot && (!turns.length || turns[turns.length - 1].t !== lastBot.t)) turns.push({ who: 'bot', t: lastBot.t });
+      if (turns.length) { petAdded = true; out.unshift({ id: 'h' + Math.round(mtime), title: 'Pip — your chat', msgs: turns.slice(-60) }); }
+      continue;
+    }
     const trimmed = msgs.slice(-50);
-    // skip the pet's own claude -p calls (their first message is the system prompt)
-    if (trimmed[0] && trimmed[0].who === 'me' && /^You are .{0,70}(companion|desktop[ -]?pet|pixel)/.test(trimmed[0].t)) continue;
     const fu = trimmed.find(x => x.who === 'me');
     const title = ((fu ? fu.t : trimmed[0].t) || 'Claude chat').replace(/\s+/g, ' ').slice(0, 28);
     out.push({ id: 'h' + Math.round(mtime), title, msgs: trimmed });
-    if (out.length >= 8) break;
+    if (out.length >= 10) break;
   }
   return out;
 });
