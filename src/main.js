@@ -114,6 +114,9 @@ ipcMain.on('set-ignore', (_e, ignore) => {
   if (win) win.setIgnoreMouseEvents(!!ignore, { forward: true });
 });
 
+/* quit from the pet's right-click menu */
+ipcMain.on('quit', () => app.quit());
+
 /* right-click context menu on the pet — quit fully */
 ipcMain.on('pet-menu', () => {
   const menu = Menu.buildFromTemplate([

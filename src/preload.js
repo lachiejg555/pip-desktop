@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('pip', {
   listScreens: () => ipcRenderer.invoke('list-screens'),
   drag: (dx, dy) => ipcRenderer.send('drag', { dx, dy }),
   petMenu: () => ipcRenderer.send('pet-menu'),
+  quit: () => ipcRenderer.send('quit'),
   onOpenSettings: (cb) => ipcRenderer.on('open-settings', cb),
   setIgnore: (ignore) => ipcRenderer.send('set-ignore', ignore),
   claude: (opts) => ipcRenderer.invoke('claude', opts)

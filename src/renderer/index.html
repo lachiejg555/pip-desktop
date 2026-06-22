@@ -374,13 +374,23 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   #introskip button{font-size:15px;padding:8px 16px}
   /* every button uses the same pixel body font as the chat text */
   button{font-family:var(--bodyfont)}
-  .findbtn{font-size:17px!important;font-family:var(--bodyfont)!important;letter-spacing:.3px}
+  .findbtn,.findbtn span{font-size:17px!important;font-family:var(--bodyfont)!important;letter-spacing:.3px}
+  .cos-soon{font-size:14px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.3}
+  #petmenu{position:fixed;z-index:320;display:none;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:5px;box-shadow:0 14px 40px rgba(0,0,0,.6);min-width:140px}
+  #petmenu.show{display:block}
+  #petmenu button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);
+    font-family:var(--bodyfont);font-size:16px;padding:8px 11px;border-radius:7px;cursor:pointer}
+  #petmenu button:hover{background:var(--panel2)}
+  body.pinning,body.pinning *{cursor:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2234%22 height=%2234%22 viewBox=%220 0 32 32%22><path d=%22M16 2C11 2 7 6 7 11c0 7 9 17 9 17s9-10 9-17c0-5-4-9-9-9z%22 fill=%22%23ff8a3c%22 stroke=%22%23241310%22 stroke-width=%222%22/><circle cx=%2216%22 cy=%2211%22 r=%223.4%22 fill=%22%23241310%22/></svg>') 16 31, crosshair !important}
   .msg.typing{display:flex;gap:5px;align-items:center;min-width:0}
   .msg.typing span{width:7px;height:7px;border-radius:50%;background:var(--accent2);opacity:.35;animation:tdot 1.1s infinite ease-in-out}
   .msg.typing span:nth-child(2){animation-delay:.16s}
   .msg.typing span:nth-child(3){animation-delay:.32s}
   @keyframes tdot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-4px)}}
-  .msgs .msg{font-size:var(--chatpx,17px)}
+  .msgs .msg{font-size:var(--chatpx,17px);white-space:pre-wrap;word-break:break-word}
+  /* no stray grey selection box when clicking UI chrome */
+  #chat .top,#chat .top *,.convs,.convs *,#introbox,#connectc,.set-card,.whd{user-select:none;-webkit-user-select:none}
   #introbox{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:208;display:none;
     width:330px;max-width:86vw;background:rgba(20,16,28,.92);border:1px solid var(--line);border-radius:16px;
     padding:16px 16px 30px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);
@@ -888,7 +898,7 @@ function loop(now){
   else if(mode==='wander'){
     if(hunger<=0){
       // head to the bottom-right corner to sleep
-      tx = W()-110; ty = Hh()-120;
+      tx = W()-66; ty = Hh()-40;
       mode='gotosleep';
     } else {
       const dx=tx-px, dy=ty-py, d=Math.hypot(dx,dy);
@@ -902,7 +912,7 @@ function loop(now){
         if(now>repickAt) { pickTarget(); idleTimer++; }
       }
       // ambient hunger drain
-      hunger=Math.max(0,hunger-dt*0.45);
+      hunger=Math.max(0,hunger-dt*0.00347);
     }
   }
   else if(mode==='gotosleep'){
@@ -970,7 +980,7 @@ pet.addEventListener('click',()=>{
   }
   if(mode==='docked'){ openChat(); return; }
   // dock target: just above clock / bottom-right
-  tx = W()-58; ty = Hh()-66;
+  tx = W()-66; ty = Hh()-40;
   mode='summon';
   const b=document.getElementById('bubble'); b.classList.remove('show'); clearTimeout(b._h);
 });
@@ -1331,7 +1341,7 @@ setTimeout(firstHello, 1400);
   let EXCLUDE=(localStorage.getItem('p3ts.exclude')||'bank\n1password\nkeychain\npassword').split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);
   let FRIENDURL=localStorage.getItem('p3ts.friendurl')||'';   // connect mode: a friend's Claude (gateway URL)
   let FRIENDKEY=localStorage.getItem('p3ts.friendkey')||'';
-  const SYS=()=>"You are "+PETNAME+", a warm and genuinely helpful pixel desktop-pet companion. Chat casually and keep replies short and friendly, no markdown. Be actually useful: answer questions and help however you can, and use web search for anything live (weather, news, facts, prices). You can also watch the user's screen when they switch it on. Stay in character as their little buddy.";
+  const SYS=()=>"You are "+PETNAME+", the user's personal AI companion, who happens to be a friendly pixel desktop pet. You have the FULL capabilities of Claude: write and debug code (any language, full programs/games), build things, research with web search, explain, plan, do math — anything Claude can do, at whatever length the task needs. NEVER refuse or downplay a real task by saying you're 'just a pet'. Be warm and a little playful, but always genuinely useful and complete. Plain text only — no markdown symbols like ** or #; when you give code, just write the code directly with normal line breaks.";
   const hasNative=!!(window.pip&&window.pip.claude);
   const isPreview=!!(window.pip&&window.pip.__preview);
   // CHAT uses your own Claude Code by default, or a friend's Claude (connect mode).
@@ -1376,7 +1386,7 @@ setTimeout(firstHello, 1400);
     while(msgs.length&&msgs[0].role!=='user') msgs.shift();
     msgs=collapse(msgs);
     const cn=chatConn();
-    try{ return await window.pip.claude({provider:cn.provider,key:cn.key,baseUrl:cn.baseUrl,model:cn.model,max_tokens:300,system:SYS(),messages:msgs}); }
+    try{ return await window.pip.claude({provider:cn.provider,key:cn.key,baseUrl:cn.baseUrl,model:cn.model,max_tokens:4000,system:SYS(),messages:msgs}); }
     catch(e){ return "(couldn't reach "+(FRIENDURL?"your friend's claude":"claude code")+" — "+e.message+")"; }
   }
   window.send=async function(){
@@ -1488,7 +1498,7 @@ setTimeout(firstHello, 1400);
   function closeConnect(){ $('connectc').classList.remove('show'); }
   function connectGo(){ closeConnect();
     if($('chat').classList.contains('open')) return;
-    try{ tx=W()-58; ty=Hh()-66; mode='summon'; }   // run to the corner, then the loop opens chat
+    try{ tx=W()-66; ty=Hh()-40; mode='summon'; }   // run to the corner, then the loop opens chat
     catch(_){ openChat(); }
   }
   $('ccGo').onclick=connectGo;
@@ -1564,21 +1574,45 @@ setTimeout(firstHello, 1400);
   /* ---------- "Find" opens the cove scene game (transplanted from widget2) ---------- */
   window.findItem=function(cat){ if(window.__openSceneGame) window.__openSceneGame(); };
 
-  /* ---------- native bridge: right-click menu + settings event ---------- */
-  if(hasNative){
-    ['pet','egg'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('contextmenu',e=>{ e.preventDefault(); window.pip.petMenu&&window.pip.petMenu(); }); });
-    window.pip.onOpenSettings&&window.pip.onOpenSettings(()=>openSettings());
+  /* ---------- right-click pet menu + PIN to a spot ---------- */
+  let pinned=false, pinX=0, pinY=0, pinMode=false;
+  const origPick=pickTarget;  // widget's wander target picker
+  window.pickTarget=function(){ if(pinned){ tx=pinX; ty=pinY; repickAt=performance.now()+4000; return; } return origPick(); };
+  document.body.insertAdjacentHTML('beforeend','<div id="petmenu"></div>');
+  function hidePetMenu(){ $('petmenu').classList.remove('show'); }
+  function showPetMenu(x,y){ const m=$('petmenu'); m.innerHTML='';
+    const add=(label,fn)=>{ const b=document.createElement('button'); b.textContent=label; b.onclick=(ev)=>{ ev.stopPropagation(); hidePetMenu(); fn(); }; m.appendChild(b); };
+    add(pinned?'Unpin (roam freely)':'Pin to a spot…', ()=> pinned?unpin():startPin());
+    add('Settings', openSettings);
+    add('Close Pip', ()=>{ if(window.pip&&window.pip.quit) window.pip.quit(); else if(window.pip&&window.pip.petMenu) window.pip.petMenu(); });
+    m.style.left=Math.min(x, window.innerWidth-150)+'px'; m.style.top=Math.min(y, window.innerHeight-130)+'px'; m.classList.add('show'); setIgnore(false);
   }
+  function startPin(){ pinMode=true; document.body.classList.add('pinning'); setIgnore(false);
+    showBubble('', 'click anywhere to pin me there', 3000); }
+  function placePin(x,y){ pinX=x; pinY=y; pinned=true; pinMode=false; document.body.classList.remove('pinning');
+    tx=pinX; ty=pinY; mode='wander'; showBubble('', 'pinned here', 1600); }
+  function unpin(){ pinned=false; if(typeof pickTarget==='function') pickTarget(); showBubble('', 'roaming again', 1500); }
+  ['pet','egg'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showPetMenu(e.clientX,e.clientY); }); });
+  // click anywhere while pinning places the pin (capture phase, so it beats the pet's own click)
+  window.addEventListener('click', e=>{
+    if(pinMode){ e.preventDefault(); e.stopPropagation(); placePin(e.clientX,e.clientY); return; }
+    if(!e.target.closest('#petmenu')) hidePetMenu();
+  }, true);
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape'&&pinMode){ pinMode=false; document.body.classList.remove('pinning'); } });
+  if(hasNative) window.pip.onOpenSettings&&window.pip.onOpenSettings(()=>openSettings());
 
-  // ---- animate the pet preview in the cosmetics (bag) view ----
+  // ---- animate the pet preview in the cosmetics (bag) view + "coming soon" note ----
   let bagFrame=0;
-  setInterval(()=>{ const pb=document.getElementById('petbig'); if(pb){ bagFrame=(bagFrame+1)%6; pb.style.backgroundPositionX=(-bagFrame*162)+'px'; } }, 170);
+  setInterval(()=>{ const pb=document.getElementById('petbig'); if(pb){ bagFrame=(bagFrame+1)%6; pb.style.backgroundPositionX=(-bagFrame*162)+'px'; }
+    const bw=document.querySelector('.bagwrap'); if(bw && !document.getElementById('cosSoon')){ const n=document.createElement('div'); n.id='cosSoon'; n.className='cos-soon'; n.textContent='Equipping & finding cosmetics — coming soon'; bw.appendChild(n); }
+  }, 170);
 
   /* ---------- click-through: window is mouse-transparent except over the pet/chat/settings ---------- */
   function setIgnore(v){ if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(v); }
   let ignoring=null;
-  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop,#introbox')); }
-  function refresh(x,y){ const want=!over(x,y); if(want!==ignoring){ ignoring=want; setIgnore(want); } }
+  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop,#introbox,#petmenu')); }
+  function refresh(x,y){ if(pinMode){ if(ignoring!==false){ ignoring=false; setIgnore(false); } return; }   // keep window clickable while placing a pin
+    const want=!over(x,y); if(want!==ignoring){ ignoring=want; setIgnore(want); } }
   window.addEventListener('mousemove',e=>refresh(e.clientX,e.clientY));
   // start mouse-transparent so the real desktop is clickable
   setIgnore(true); ignoring=true;
@@ -1621,11 +1655,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
   function gset(row,fps){ if(gAnim.row!==row){gAnim.row=row;gAnim.frame=0;gAnim.t=0;} gAnim.fps=fps||5; }
 
   // ---- collision: only solid OBJECTS (buildings). posts/rocks/water no longer block ----
-  const SOLIDS=[
-    {x:484,y:76, w:122,h:38},    // top-right house — ground base only
-    {x:146,y:72, w:58, h:22},    // small upper-left hut — base
-    {x:504,y:386,w:92, h:30}     // lower-right cabin — base
-  ];
+  const SOLIDS=[];  // collision removed — walk anywhere
   function shoreY(x){ const base=502; const dip=28*Math.exp(-Math.pow((x-440)/90,2)); return base-dip; }
   function inSolid(x,y){ for(const s of SOLIDS){ if(x>s.x&&x<s.x+s.w&&y>s.y&&y<s.y+s.h) return true; } return false; }
   function walkable(x,y){

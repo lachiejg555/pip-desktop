@@ -1,6 +1,6 @@
 {
   "name": "p3ts-desktop",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "P3TS — pixel pet on real Claude/OpenClaw guts, with the Driftwood Cove multiplayer game",
   "author": "lachiejg555",
   "main": "src/main.js",
