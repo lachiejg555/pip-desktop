@@ -10,6 +10,7 @@ const { spawn } = require('child_process');
    Works for anyone who has Claude Code installed and has run `claude` to sign in. */
 function runClaudeCli({ system, messages }) {
   return new Promise((resolve, reject) => {
+    const fs = require('fs');
     const lines = [];
     if (system) lines.push(system, '');
     let hadImage = false;
@@ -22,24 +23,37 @@ function runClaudeCli({ system, messages }) {
     }
     lines.push('', 'Reply now, in character, with one short message. No markdown.');
     const prompt = lines.join('\n');
-    const bin = process.platform === 'win32' ? 'claude.cmd' : 'claude';
-    let child;
-    try {
-      child = spawn(bin, ['-p', '--output-format', 'text'], { shell: process.platform === 'win32' });
-    } catch (e) {
-      return reject(new Error('Claude Code not found. Install it and run `claude` once to sign in.'));
-    }
-    let out = '', err = '';
-    child.stdout.on('data', d => out += d);
-    child.stderr.on('data', d => err += d);
-    child.on('error', () => reject(new Error('Claude Code not found on PATH. Install Claude Code and run `claude` to sign in.')));
-    child.on('close', (code) => {
-      if (code === 0 && out.trim()) resolve(out.trim());
-      else reject(new Error((err.trim() || ('Claude Code exited ' + code)).slice(0, 200)));
-    });
-    child.stdin.on('error', () => {});
-    child.stdin.write(prompt);
-    child.stdin.end();
+    const win = process.platform === 'win32';
+    // A GUI-launched app can have a stripped PATH, so try common Claude Code locations too.
+    const cands = win
+      ? ['claude.cmd',
+         path.join(process.env.APPDATA || '', 'npm', 'claude.cmd'),
+         path.join(process.env.LOCALAPPDATA || '', 'npm', 'claude.cmd')]
+      : ['claude', '/usr/local/bin/claude', '/opt/homebrew/bin/claude',
+         path.join(process.env.HOME || '', '.local', 'bin', 'claude')];
+    const tryAt = (i) => {
+      if (i >= cands.length) {
+        return reject(new Error('Claude Code not found on this computer. Install it (npm i -g @anthropic-ai/claude-code) and run `claude` once to sign in.'));
+      }
+      const bin = cands[i];
+      if ((bin.includes('/') || bin.includes('\\')) && !fs.existsSync(bin)) return tryAt(i + 1);
+      let child;
+      try { child = spawn(bin, ['-p', '--output-format', 'text'], { shell: win }); }
+      catch (e) { return tryAt(i + 1); }
+      let out = '', err = '', done = false;
+      child.stdout.on('data', d => out += d);
+      child.stderr.on('data', d => err += d);
+      child.on('error', () => { if (!done) { done = true; tryAt(i + 1); } });
+      child.on('close', (code) => {
+        if (done) return; done = true;
+        if (code === 0 && out.trim()) resolve(out.trim());
+        else reject(new Error((err.trim() || ('Claude Code exited ' + code)).slice(0, 240)));
+      });
+      child.stdin.on('error', () => {});
+      child.stdin.write(prompt);
+      child.stdin.end();
+    };
+    tryAt(0);
   });
 }
 

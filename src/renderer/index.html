@@ -367,6 +367,14 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   .set-x{position:absolute;right:12px;top:10px;background:transparent;border:none;color:var(--mut);
     font-size:18px;cursor:pointer;line-height:1}
   .set-hint{font-size:13px;color:var(--mut);line-height:1.3}
+  #connectc{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(8,5,14,.55);z-index:210;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  #connectc.show{display:flex}
+  .msg.typing{display:flex;gap:5px;align-items:center;min-width:0}
+  .msg.typing span{width:7px;height:7px;border-radius:50%;background:var(--accent2);opacity:.35;animation:tdot 1.1s infinite ease-in-out}
+  .msg.typing span:nth-child(2){animation-delay:.16s}
+  .msg.typing span:nth-child(3){animation-delay:.32s}
+  @keyframes tdot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-4px)}}
 </style>
 <style id="p3ts-game">
 /* ===================== SCENE GAME (docked in Pip window) ===================== */
@@ -1317,7 +1325,7 @@ setTimeout(firstHello, 1400);
 
   /* ---------- Claude-wired chat ---------- */
   function addTyping(){ const m=$('msgs'); if(!m) return null; const e=document.createElement('div');
-    e.className='msg bot'; e.textContent='…'; m.appendChild(e); m.scrollTop=m.scrollHeight; return e; }
+    e.className='msg bot typing'; e.innerHTML='<span></span><span></span><span></span>'; m.appendChild(e); m.scrollTop=m.scrollHeight; return e; }
   function collapse(a){ const o=[]; for(const m of a){ if(o.length&&o[o.length-1].role===m.role) o[o.length-1].content+='\n'+m.content; else o.push({role:m.role,content:m.content}); } return o; }
   async function askClaude(c){
     if(!hasNative) return "(browser preview — i can't reach an AI here. open me in the desktop app and i'll reply for real 🐾)";
@@ -1339,12 +1347,11 @@ setTimeout(firstHello, 1400);
     c.msgs.push({who:'bot',t:r}); if(activeId===c.id) addMsgEl('bot',r); c.sub=r.slice(0,28); renderConvs();
   };
 
-  /* ---------- intro → "let's get started" → connect step → chat ----------
-     Defaults to Claude Code (no key); they confirm/connect, then land in chat. */
+  /* ---------- intro → "let's get started" → minimal Claude Code connect → chat ---------- */
   window.advanceIntro=function(){
     introIdx++;
     if(introIdx>=INTRO_LINES.length){ hideBubble(); mode='wander'; pickTarget(); lastBubble=performance.now();
-      window.__afterConnect=true; setTimeout(openSettings, 400); return; }
+      setTimeout(openConnect, 400); return; }
     introBubble(INTRO_LINES[introIdx]);
   };
 
@@ -1410,8 +1417,6 @@ setTimeout(firstHello, 1400);
     +'<label>Privacy — never watch these</label>'
     +'<textarea id="sExcl" placeholder="one per line: bank, 1password, keychain…"></textarea>'
     +'<div class="set-hint">When the screen shows anything sensitive (banking, passwords) or matching these, '+'Pip looks away and sends nothing. Your key &amp; data stay on this machine.</div>'
-    +'<label>Cove relay (multiplayer)</label><input id="sRelay" placeholder="wss://driftwood-cove.lachiejg5.workers.dev" autocomplete="off"/>'
-    +'<div class="set-hint">Pre-set to your live Cloudflare cove — everyone on this build shares one world. Use ws://localhost:8787 for local-only play.</div>'
     +'<label>Wallet — buy cosmetics with crypto</label>'
     +'<input id="sWcpid" placeholder="WalletConnect Project ID" autocomplete="off"/>'
     +'<input id="sEthRecv" placeholder="Your ETH receiving address (0x…)" autocomplete="off" style="margin-top:6px"/>'
@@ -1421,6 +1426,20 @@ setTimeout(firstHello, 1400);
     +'<button class="set-btn primary" id="sSave">Save</button></div>'
     +'</div></div>';
   document.body.insertAdjacentHTML('beforeend',SETTINGS);
+  // minimal start-of-app connect step — Claude Code only
+  document.body.insertAdjacentHTML('beforeend',
+    '<div id="connectc"><div class="set-card" style="text-align:center;width:300px">'
+    +'<h3 style="justify-content:center">🐾 Meet <span id="ccName">Pip</span></h3>'
+    +'<div class="set-hint">I chat using <b>your own Claude Code</b> login — no API key, no setup.</div>'
+    +'<div class="set-hint" style="margin-top:8px">First time? Install Claude Code on this computer and run <code>claude</code> once to sign in.</div>'
+    +'<button class="set-btn primary" id="ccGo" style="margin-top:12px">Start chatting →</button>'
+    +'<div class="set-hint" style="margin-top:10px;opacity:.65">API key, model &amp; privacy options live in the ⚙ in the chat.</div>'
+    +'</div></div>');
+  function openConnect(){ const n=$('ccName'); if(n) n.textContent=PETNAME; $('connectc').classList.add('show'); setIgnore(false); }
+  function closeConnect(){ $('connectc').classList.remove('show'); }
+  function connectGo(){ closeConnect(); if(!$('chat').classList.contains('open')) openChat(); }
+  $('ccGo').onclick=connectGo;
+  $('connectc').addEventListener('click',e=>{ if(e.target.id==='connectc') connectGo(); });
   function updateWatchUI(){
     const w=$('sWatch');
     if(w){
@@ -1437,7 +1456,6 @@ setTimeout(firstHello, 1400);
   function openSettings(){ $('sName').value=PETNAME; $('sKey').value=API_KEY; $('sModel').value=MODEL;
     $('sProvider').value=PROVIDER; $('sOcurl').value=OCURL; $('sOckey').value=OCKEY; applyProviderUI();
     $('sInt').value=String(INTERVAL); $('sExcl').value=localStorage.getItem('p3ts.exclude')||'bank\n1password\nkeychain\npassword';
-    $('sRelay').value=localStorage.getItem('p3ts.relay')||'wss://driftwood-cove.lachiejg5.workers.dev';
     $('sWcpid').value=localStorage.getItem('p3ts.wcpid')||''; $('sEthRecv').value=localStorage.getItem('p3ts.ethrecv')||''; $('sSolRecv').value=localStorage.getItem('p3ts.solrecv')||'';
     $('sTitle').textContent=PETNAME; updateWatchUI(); $('settings').classList.add('show'); setIgnore(false); }
   function closeSettings(){ $('settings').classList.remove('show'); }
@@ -1453,15 +1471,13 @@ setTimeout(firstHello, 1400);
     INTERVAL=+$('sInt').value; localStorage.setItem('p3ts.interval',INTERVAL);
     const raw=$('sExcl').value; localStorage.setItem('p3ts.exclude',raw);
     EXCLUDE=raw.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);
-    localStorage.setItem('p3ts.relay', $('sRelay').value.trim()||'wss://driftwood-cove.lachiejg5.workers.dev');
     localStorage.setItem('p3ts.wcpid', $('sWcpid').value.trim());
     localStorage.setItem('p3ts.ethrecv', $('sEthRecv').value.trim());
     localStorage.setItem('p3ts.solrecv', $('sSolRecv').value.trim());
     if(stream&&loop){ clearInterval(loop); loop=setInterval(commentTick,INTERVAL); }
     syncName(); $('sTitle').textContent=PETNAME;
-    showBubble('', connected()?'connected! 🐾':'saved — connect to claude or openclaw to go live', 2600);
+    showBubble('', 'saved 🐾', 1800);
     closeSettings();
-    if(window.__afterConnect){ window.__afterConnect=false; setTimeout(()=>{ if(!$('chat').classList.contains('open')) openChat(); }, 150); }
   };
   $('sWatch').onclick=()=> watching?stopWatch():startWatch();
   $('sPause').onclick=()=>{ if(!stream) return; paused=!paused; updateWatchUI();
@@ -1988,7 +2004,7 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
     logMsg('','🌿 Welcome to Driftwood Cove. WASD or right-click to move Pip.','sys');
     logMsg('','Gather resources by standing still in a spot (every 30s). Tap a stall to trade.','sys');
     buildOccluders(); buildMarkets(); updateCoins(); closeMarket();
-    spawnOthers(); scheduleForage();
+    spawnOthers(); scheduleForage(); if(typeof goOnline==='function') setTimeout(goOnline,150);
     layout();
     lastT=performance.now();
     raf=requestAnimationFrame(gloop);
@@ -2069,13 +2085,8 @@ const SCENE = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAg
     ws.onerror=()=>{ logMsg('','⚠ could not reach the relay. Is it running? (npm run relay)','sys'); };
     ws.onclose=()=>{ if(net.online) logMsg('','🔌 disconnected from the cove','sys'); cleanupNet(); };
   }
-  // Go Online button in the zoom control column
-  const goBtn=document.createElement('button'); goBtn.id='ggo'; goBtn.className='gzbtn';
-  goBtn.textContent='🌐'; goBtn.title='Go online (multiplayer)';
-  (document.getElementById('gzoom')||document.body).prepend(goBtn);
-  goBtn.onclick=goOnline;
-  function updateGoBtn(){ goBtn.style.background = net.online?'#2fae6a':''; goBtn.style.borderColor = net.online?'transparent':'';
-    goBtn.title = net.online?'Online — click to go offline':(net.ws?'Connecting…':'Go online (multiplayer)'); }
+  // multiplayer is automatic on entering the cove (no button / not an option)
+  function updateGoBtn(){}
   // leaving the game / closing also disconnects
   const _closeGame=closeGame; closeGame=function(){ if(net.online||net.ws) goOffline(); _closeGame(); };
 
