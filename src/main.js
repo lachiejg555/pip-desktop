@@ -38,7 +38,8 @@ function runClaudeCli({ system, messages }) {
       const bin = cands[i];
       if ((bin.includes('/') || bin.includes('\\')) && !fs.existsSync(bin)) return tryAt(i + 1);
       let child;
-      try { child = spawn(bin, ['-p', '--output-format', 'text'], { shell: win }); }
+      // allow web search so Pip can answer live things (weather, news, facts)
+      try { child = spawn(bin, ['-p', '--output-format', 'text', '--allowed-tools', 'WebSearch'], { shell: win }); }
       catch (e) { return tryAt(i + 1); }
       let out = '', err = '', done = false;
       child.stdout.on('data', d => out += d);

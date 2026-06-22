@@ -370,6 +370,10 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:var(--bodyfont);backg
   #connectc{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,14,.55);z-index:210;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
   #connectc.show{display:flex}
+  #introskip{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:215;display:none}
+  #introskip button{font-size:15px;padding:8px 16px}
+  /* every button uses the same pixel body font as the chat text */
+  button{font-family:var(--bodyfont)}
   .msg.typing{display:flex;gap:5px;align-items:center;min-width:0}
   .msg.typing span{width:7px;height:7px;border-radius:50%;background:var(--accent2);opacity:.35;animation:tdot 1.1s infinite ease-in-out}
   .msg.typing span:nth-child(2){animation-delay:.16s}
@@ -1299,7 +1303,7 @@ setTimeout(firstHello, 1400);
   let PROVIDER=localStorage.getItem('p3ts.provider')||'claudecli';         // 'claudecli' | 'claude' | 'openclaw'
   let OCURL=localStorage.getItem('p3ts.ocurl')||'http://localhost:18789';  // OpenClaw gateway base URL
   let OCKEY=localStorage.getItem('p3ts.ockey')||'';                        // optional OpenClaw token
-  const SYS=()=>"You are "+PETNAME+", a small warm pixel desktop pet living on the user's screen. Keep replies short, friendly and casual, no markdown. You only see the screen when the user enables watching.";
+  const SYS=()=>"You are "+PETNAME+", a warm and genuinely helpful pixel desktop-pet companion. Chat casually and keep replies short and friendly, no markdown. Be actually useful: answer questions and help however you can, and use web search for anything live (weather, news, facts, prices). You can also watch the user's screen when they switch it on. Stay in character as their little buddy.";
   const hasNative=!!(window.pip&&window.pip.claude);
   const isPreview=!!(window.pip&&window.pip.__preview);
   // resolve the active connection into {provider,key,baseUrl,model}
@@ -1440,6 +1444,13 @@ setTimeout(firstHello, 1400);
   function connectGo(){ closeConnect(); if(!$('chat').classList.contains('open')) openChat(); }
   $('ccGo').onclick=connectGo;
   $('connectc').addEventListener('click',e=>{ if(e.target.id==='connectc') connectGo(); });
+
+  // ---- intro: let people read it (tap Pip) OR skip straight to the start ----
+  document.body.insertAdjacentHTML('beforeend',
+    '<div id="introskip"><button class="set-btn" id="introSkipBtn">Skip intro ⏭</button></div>');
+  function skipIntro(){ if(typeof INTRO_LINES==='undefined') return; introIdx=INTRO_LINES.length-1; window.advanceIntro(); }
+  $('introSkipBtn').onclick=skipIntro;
+  setInterval(()=>{ const s=$('introskip'); if(s) s.style.display=(typeof mode!=='undefined'&&mode==='intro')?'block':'none'; }, 250);
   function updateWatchUI(){
     const w=$('sWatch');
     if(w){
@@ -1514,7 +1525,7 @@ setTimeout(firstHello, 1400);
   /* ---------- click-through: window is mouse-transparent except over the pet/chat/settings ---------- */
   function setIgnore(v){ if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(v); }
   let ignoring=null;
-  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop')); }
+  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop,#introskip')); }
   function refresh(x,y){ const want=!over(x,y); if(want!==ignoring){ ignoring=want; setIgnore(want); } }
   window.addEventListener('mousemove',e=>refresh(e.clientX,e.clientY));
   // start mouse-transparent so the real desktop is clickable
