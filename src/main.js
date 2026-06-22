@@ -21,7 +21,7 @@ function runClaudeCli({ system, messages }) {
     if (hadImage && !lines.length) {
       return reject(new Error('Screen-watch needs the API or OpenClaw provider — chat works on your subscription.'));
     }
-    lines.push('', 'Reply now, in character, with one short message. No markdown.');
+    lines.push('', 'Now respond in character to the last message. Give a complete, genuinely helpful answer — full code, full detail, or as long as the task needs. Plain text (no markdown symbols).');
     const prompt = lines.join('\n');
     const win = process.platform === 'win32';
     // A GUI-launched app can have a stripped PATH, so try common Claude Code locations too.
