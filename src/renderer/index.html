@@ -1514,7 +1514,7 @@ setTimeout(firstHello, 1400);
   /* ---------- click-through: window is mouse-transparent except over the pet/chat/settings ---------- */
   function setIgnore(v){ if(window.pip&&window.pip.setIgnore) window.pip.setIgnore(v); }
   let ignoring=null;
-  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings')); }
+  function over(x,y){ const el=document.elementFromPoint(x,y); return !!(el&&el.closest('#pet,#egg,#chat,#settings,#connectc,#wshop')); }
   function refresh(x,y){ const want=!over(x,y); if(want!==ignoring){ ignoring=want; setIgnore(want); } }
   window.addEventListener('mousemove',e=>refresh(e.clientX,e.clientY));
   // start mouse-transparent so the real desktop is clickable
